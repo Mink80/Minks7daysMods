@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<ModInfo>
+		<Name value="Minks Tools" />
+		<Description value="Currently only implemants command servertime" />
+		<Author value="Kai Sassmannshausen" />
+		<Version value="1" />
+		<Website value="http://7dtd.illy.bz" />
+	</ModInfo>
+</xml>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<ModInfo>
+		<Name value="Minks Teleport Sytem" />
+		<Description value="A teleport system based on location names." />
+		<Author value="Kai Sassmannshausen" />
+		<Version value="0.9" />
+		<Website value="http://7dtd.illy.bz" />
+	</ModInfo>
+</xml>

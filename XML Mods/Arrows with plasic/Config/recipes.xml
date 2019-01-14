@@ -1,0 +1,18 @@
+<MinkiosMods>
+    <append xpath="/recipes">
+
+        <recipe name="ammoArrowIronWithPlastic" count="1">
+            <ingredient name="resourceArrowHeadIron" count="1"/>
+            <ingredient name="resourceWood" count="1"/>
+            <ingredient name="resourceScrapPolymers" count="1"/>
+        </recipe>
+
+        <recipe name="ammoArrowSteelAP" count="1">
+            <ingredient name="resourceArrowHeadSteelAP" count="1"/>
+            <ingredient name="resourceWood" count="1"/>
+            <ingredient name="resourceScrapPolymers" count="1"/>
+        </recipe>
+
+    </append>
+</MinkiosMods>
+

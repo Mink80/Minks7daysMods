@@ -1,0 +1,11 @@
+<MinkiosMods>
+    <append xpath="/recipes">
+
+        <recipe name="drinkCanEmpty" count="1" craft_area="forge" material_based="true">
+            <ingredient name="unit_iron" count="2"/>
+            <ingredient name="unit_clay" count="1"/>
+        </recipe>
+
+    </append>
+</MinkiosMods>
+

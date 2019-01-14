@@ -33,7 +33,7 @@ namespace MinksMods.MinksTeleportSystem
 {
     public static class TeleportSystemConfiguration
     {
-        public static double TransportationDelay = 2; // minutes
+        public static double TeleportDelay = 15; // minutes
         public static int MaxLocations = 5; // per player (0 = unlimited)
     }
 
@@ -178,7 +178,7 @@ namespace MinksMods.MinksTeleportSystem
 
             if (LastTeleportTimes.Teleportations.ContainsKey(SteamID))
             {
-                int result = (Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TransportationDelay)).CompareTo(DateTime.Now);
+                int result = (Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TeleportDelay)).CompareTo(DateTime.Now);
                 if (result >= 0 )
                 {
                     return false;
@@ -201,7 +201,7 @@ namespace MinksMods.MinksTeleportSystem
 
             if (!IsValidTeleportRequest(SteamID))
             {
-                TimeSpan duration = LastTeleportTimes.Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TransportationDelay) - DateTime.Now;
+                TimeSpan duration = LastTeleportTimes.Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TeleportDelay) - DateTime.Now;
 
                 if (duration.TotalSeconds <= 60)
                 {

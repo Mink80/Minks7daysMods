@@ -2,12 +2,7 @@ Put the
 
 * Assembly-CSharp.dll, 
 * Assembly-CSharp-firstpass.dll
-* LogLibrary.dll, mscorlib.dll
-* System.dll
-* System.Xml.dll
-* UnityEngine.dll
 * UnityEngine.CoreModule.dll
-* UnityEngine.ImageConversionModule.dll
 
 files from your dedicated server into this folder.
 

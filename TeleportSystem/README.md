@@ -35,7 +35,7 @@ See [here](https://github.com/Mink80/Minks7daysMods/blob/master/TeleportSystem/7
 
 
 ## Installation
-Download the binary Version [here](https://drive.google.com/file/d/13Mx_DN87t_W6jv_YkPncHxefWF14bvJw/view?usp=sharing "Minks_TeleportSystem.zip") and place the unpacked Folder it in the 7 Days to Die Mods Folder of your dedicated server.
+Download the binary version [here](https://drive.google.com/file/d/13Mx_DN87t_W6jv_YkPncHxefWF14bvJw/view?usp=sharing "Minks_TeleportSystem.zip") and place the unpacked Folder it in the 7 Days to Die Mods Folder of your dedicated server.
 Remember that this Mod depends on allocs server fixes. Make sure you have them in your Mods folder too. See Requirements.
 Of course you can also compile your own binary from the source. VS project file is included.
 

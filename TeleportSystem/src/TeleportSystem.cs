@@ -201,11 +201,18 @@ namespace MinksMods.MinksTeleportSystem
 
         private static void Save()
         {
-            string file = Path.Combine(TeleportSystem.filepath, filename);
-            Stream stream = File.Open(file, FileMode.Create);
-            BinaryFormatter bFormatter = new BinaryFormatter();
-            bFormatter.Serialize(stream, Destinations);
-            stream.Close();
+            try
+            {
+                string file = Path.Combine(TeleportSystem.filepath, filename);
+                Stream stream = File.Open(file, FileMode.Create);
+                BinaryFormatter bFormatter = new BinaryFormatter();
+                bFormatter.Serialize(stream, Destinations);
+                stream.Close();
+            }
+            catch (Exception Ex)
+            {
+                Log.Exception(Ex);
+            }
         }
 
         public static void Load()

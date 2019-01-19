@@ -301,7 +301,7 @@ namespace MinksMods.MinksTeleportSystem
 
         public override int DefaultPermissionLevel
         {
-            get { return 500; }
+            get { return 1000; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
@@ -390,7 +390,7 @@ namespace MinksMods.MinksTeleportSystem
 
         public override int DefaultPermissionLevel
         {
-            get { return 500; }
+            get { return 1000; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
@@ -458,7 +458,7 @@ namespace MinksMods.MinksTeleportSystem
 
         public override int DefaultPermissionLevel
         {
-            get { return 500; }
+            get { return 1000; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
@@ -595,7 +595,7 @@ namespace MinksMods.MinksTeleportSystem
 
         public override int DefaultPermissionLevel
         {
-            get { return 500; }
+            get { return 1000; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
@@ -648,7 +648,7 @@ namespace MinksMods.MinksTeleportSystem
 
         public override int DefaultPermissionLevel
         {
-            get { return 500; }
+            get { return 1000; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)

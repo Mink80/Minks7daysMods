@@ -45,6 +45,7 @@
       <HintPath>7dtd-binaries\LogLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.XML" />
     <Reference Include="UnityEngine">
       <HintPath>7dtd-binaries\UnityEngine.dll</HintPath>
     </Reference>
@@ -56,11 +57,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="TeleportSystemConfig.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Compile Include="src\API.cs" />
     <Compile Include="src\TeleportSystem.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ModInfo.xml" />
+    <Content Include="ModInfo.xml">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

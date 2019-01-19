@@ -19,22 +19,87 @@
     * Allied shared destinations
     * make private/global
     * 
-    ToDo:
-    * Config in XML or ingame
- */
+*/
 
 using System;
 using System.IO;
+using System.Xml;
 using System.Collections.Generic;
 using AllocsFixes.PersistentData;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MinksMods.MinksTeleportSystem
 {
-    public static class TeleportSystemConfiguration
+    public static class TeleportSystem
     {
+        //default values. will be overwritten by xml file
         public static double TeleportDelay = 15; // minutes
         public static int MaxLocations = 5; // per player (0 = unlimited)
+        public static string filepath;
+
+        public static void init()
+        {
+            filepath = GameUtils.GetSaveGameDir() + Path.DirectorySeparatorChar;
+            TeleportDestinations.Load();
+            LoadSettingsFromXml();
+        }
+
+        public static void LoadSettingsFromXml()
+        {
+            XmlDocument doc = new XmlDocument();
+            string configfile = Path.Combine(filepath, "TeleportSystemConfig.xml");
+            if (File.Exists(configfile))
+            {
+                doc.Load(configfile);
+
+                XmlNode setting_maxloc, setting_teldel;
+                XmlElement root = doc.DocumentElement;
+
+                setting_maxloc = root.SelectSingleNode("MaxLocations");
+                setting_teldel = root.SelectSingleNode("TeleportDelay");
+
+                if (Int32.TryParse(setting_maxloc.InnerText, out MaxLocations) && Double.TryParse(setting_teldel.InnerText, out TeleportDelay))
+                {
+                    Log.Out("TeleportSystem: TeleportSystemConfig.xml loaded.");
+                    return;
+                }
+            }
+            else
+            {
+                WriteSettingsFile(configfile);
+            }
+
+            // xml load failed, restoring defaults
+            TeleportDelay = 15;
+            MaxLocations = 5;
+            Log.Out("TeleportSystem: Error loading TeleportSystemConfig.xml");
+        }
+
+        public static void WriteSettingsFile(string _xmlfile)
+        {
+            try
+            {
+                string content = "<?xml version='1.0'?>\n" +
+                                "<TeleportSystemConfig>\n\n" +
+                                "\t<!-- in Minutes-->\n" +
+                                "\t<TeleportDelay> 15 </TeleportDelay>\n\n" +
+                                "\t<!-- Max teleport destinations per player -->\n" +
+                                "\t<MaxLocations> 5 </MaxLocations>\n\n" +
+                                "</TeleportSystemConfig>\n";
+
+                using (StreamWriter writer = new StreamWriter(_xmlfile))
+                {
+                    writer.Write(content);
+                }
+            }
+            catch (Exception Ex)
+            {
+                Log.Error("Exception in loading file " + _xmlfile + ".");
+                Log.Exception(Ex);
+            }
+
+        }
+
     }
 
     [Serializable]
@@ -136,7 +201,7 @@ namespace MinksMods.MinksTeleportSystem
 
         private static void Save()
         {
-            string file = GameUtils.GetSaveGameDir() +  filename;
+            string file = Path.Combine(TeleportSystem.filepath, filename);
             Stream stream = File.Open(file, FileMode.Create);
             BinaryFormatter bFormatter = new BinaryFormatter();
             bFormatter.Serialize(stream, Destinations);
@@ -145,14 +210,14 @@ namespace MinksMods.MinksTeleportSystem
 
         public static void Load()
         {
-            if (!File.Exists(GameUtils.GetSaveGameDir() + filename))
+            if (!File.Exists(Path.Combine(TeleportSystem.filepath, filename)))
             {
                 return;
             }
 
             try
             {
-                Stream stream = File.Open(GameUtils.GetSaveGameDir() + filename, FileMode.Open);
+                Stream stream = File.Open( Path.Combine(TeleportSystem.filepath, filename), FileMode.Open);
                 BinaryFormatter bFormatter = new BinaryFormatter();
                 Destinations = (List<TeleportDestination>)bFormatter.Deserialize(stream);
                 stream.Close();
@@ -178,7 +243,7 @@ namespace MinksMods.MinksTeleportSystem
 
             if (LastTeleportTimes.Teleportations.ContainsKey(SteamID))
             {
-                int result = (Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TeleportDelay)).CompareTo(DateTime.Now);
+                int result = (Teleportations[SteamID].AddMinutes(TeleportSystem.TeleportDelay)).CompareTo(DateTime.Now);
                 if (result >= 0 )
                 {
                     return false;
@@ -201,7 +266,7 @@ namespace MinksMods.MinksTeleportSystem
 
             if (!IsValidTeleportRequest(SteamID))
             {
-                TimeSpan duration = LastTeleportTimes.Teleportations[SteamID].AddMinutes(TeleportSystemConfiguration.TeleportDelay) - DateTime.Now;
+                TimeSpan duration = LastTeleportTimes.Teleportations[SteamID].AddMinutes(TeleportSystem.TeleportDelay) - DateTime.Now;
 
                 if (duration.TotalSeconds <= 60)
                 {
@@ -284,9 +349,9 @@ namespace MinksMods.MinksTeleportSystem
                     }
                 }
 
-                if (TeleportSystemConfiguration.MaxLocations != 0 && count > TeleportSystemConfiguration.MaxLocations )
+                if (TeleportSystem.MaxLocations != 0 && count > TeleportSystem.MaxLocations )
                 {
-                    SdtdConsole.Instance.Output("You reached your maximum allowed number of teleport destinations (max "+ TeleportSystemConfiguration.MaxLocations +"). You can not add another one. May delete an old one? Try \"ListTeleportDestinations\" and \"DelTeleportDestination\" commands.");
+                    SdtdConsole.Instance.Output("You reached your maximum allowed number of teleport destinations (max "+ TeleportSystem.MaxLocations +"). You can not add another one. May delete an old one? Try \"ListTeleportDestinations\" and \"DelTeleportDestination\" commands.");
                     return;
                 }
 

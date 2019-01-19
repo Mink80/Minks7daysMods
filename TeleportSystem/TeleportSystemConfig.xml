@@ -1,0 +1,10 @@
+﻿<?xml version="1.0"?>
+<TeleportSystemConfig>
+
+  <!-- in Minutes-->
+  <TeleportDelay> 15 </TeleportDelay>
+
+  <!-- Max teleport destinations per player -->
+  <MaxLocations> 5 </MaxLocations>         
+  
+</TeleportSystemConfig>

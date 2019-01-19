@@ -1,7 +1,7 @@
 <MinkiosMods>
     <append xpath="/recipes">
 
-        <recipe name="ammoArrowIronWithPlastic" count="1">
+        <recipe name="ammoArrowIron" count="1">
             <ingredient name="resourceArrowHeadIron" count="1"/>
             <ingredient name="resourceWood" count="1"/>
             <ingredient name="resourceScrapPolymers" count="1"/>

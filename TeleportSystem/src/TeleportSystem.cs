@@ -94,7 +94,7 @@ namespace MinksMods.MinksTeleportSystem
             }
             catch (Exception Ex)
             {
-                Log.Error("Exception in loading file " + _xmlfile + ".");
+                Log.Error("Exception in savinig file " + _xmlfile + ".");
                 Log.Exception(Ex);
             }
 

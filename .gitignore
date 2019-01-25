@@ -248,3 +248,11 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 /ConsoleApplication1
+/Minks_ModChallenge/7dtd-binaries/UnityEngine.ImageConversionModule.dll
+/Minks_ModChallenge/7dtd-binaries/UnityEngine.dll
+/Minks_ModChallenge/7dtd-binaries/UnityEngine.CoreModule.dll
+/Minks_ModChallenge/7dtd-binaries/mscorlib.dll
+/Minks_ModChallenge/7dtd-binaries/LogLibrary.dll
+/Minks_ModChallenge/7dtd-binaries/Assembly-CSharp.dll
+/Minks_ModChallenge/7dtd-binaries/Assembly-CSharp-firstpass.dll
+/Minks_ModChallenge/7dtd-binaries/7dtd-server-fixes.dll

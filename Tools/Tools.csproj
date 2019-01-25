@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API.cs" />
-    <Compile Include="src\Bloodnight.cs" />
     <Compile Include="src\Servertime.cs" />
   </ItemGroup>
   <ItemGroup>

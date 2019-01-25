@@ -32,10 +32,11 @@ namespace MinksMods.ModChallenge
         public static int counter = 0;
 
         // settings
-        public static int request_timeout = 2;      // minutes (default 15)a
-        public static int challenge_timeout = 3;    // minutes (default 45)
-        public static int info_interval = 1;        // minutes (default 3)
-                                                    // ---
+        public static int request_timeout = 2;          // minutes (default 15)a
+        public static int challenge_timeout = 3;        // minutes (default 45)
+        public static int info_interval = 1;            // minutes (default 3)
+        public static string message_color = "ff0000";    // rgb
+        // ---
 
 #if DEBUG
         public static string mySteamID = "76561197981703289";
@@ -91,8 +92,16 @@ namespace MinksMods.ModChallenge
             over
         };
 
+        public enum winoptions
+        {
+            none,
+            requester,
+            receiver
+        }
+
         private int id;
         private stages stage;
+        private winoptions winner;
         private string requester, receiver;
         private DateTime time = new DateTime();
 
@@ -103,6 +112,7 @@ namespace MinksMods.ModChallenge
             receiver = _receiver;
             time = DateTime.Now;
             id = _id;
+            winner = winoptions.none;
         }
 
         public string Requester
@@ -250,6 +260,8 @@ namespace MinksMods.ModChallenge
                             {
                                 ModChallenge.AddChallenge(new Challenge(playerID, receiver.playerId, ++ModChallenge.counter));
                                 SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
+                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You challenged " + receiver.playerName + ".[-]", "", false, null));
+                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You were challenged by " + senderinfo.RemoteClientInfo.playerName + ".[-]", "", false, null));
                             }
                             else
                             {
@@ -265,6 +277,8 @@ namespace MinksMods.ModChallenge
 
                         if (_params[1] == "accept" || _params[1] == "revoke")
                         {
+                            ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
+
                             foreach (Challenge c in player_challenges)
                             {
                                 if (c.Stage == Challenge.stages.requested)
@@ -273,9 +287,14 @@ namespace MinksMods.ModChallenge
                                     {
                                         if (!c.IsTimedOut())
                                         {
-                                            c.Accept();
-                                            SdtdConsole.Instance.Output("You accepted the challenge.");
-                                            return;
+                                            if (receiver != null)
+                                            {
+                                                c.Accept();
+                                                SdtdConsole.Instance.Output("You accepted the challenge.");
+                                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge! The challenge will start in 2 minutes! Get ready![-]", "", false, null));
+                                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " accepted your challenge! Challenge will start in 2 minutes! Get ready![-]", "", false, null));
+                                                return;
+                                            }
                                         }
                                         else
                                         {
@@ -287,6 +306,8 @@ namespace MinksMods.ModChallenge
                                     else if (c.Requester == playerID && _params[1] == "revoke")
                                     {
                                         SdtdConsole.Instance.Output("You revoked the challenge.");
+                                        senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You revoked the challenge.[-]", "", false, null));
+                                        receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " has revoked the challenge invite![-]", "", false, null));
                                         ModChallenge.DelChallenge(c);
                                         return;
                                     }

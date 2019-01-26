@@ -22,21 +22,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using UnityEngine;
 using AllocsFixes.PersistentData;
 
 namespace MinksMods.ModChallenge
 {
+    public delegate void TimerCallback(object state);
+
     public static class ModChallenge
     {
         public static List<Challenge> Challenges = new List<Challenge>();
         public static int counter = 0;
 
         // settings
-        public static int request_timeout = 2;          // minutes (default 15)a
+        public static int request_timeout = 2;          // minutes (default 15)
         public static int challenge_timeout = 3;        // minutes (default 45)
-        public static int info_interval = 1;            // minutes (default 3)
-        public static string message_color = "ff0000";    // rgb
-        // ---
+        public static int info_interval = 1;            // minutes (default 2)
+        public static string message_color = "ff0000";  // rgb
+                                                        // ---
 
 #if DEBUG
         public static string mySteamID = "76561197981703289";
@@ -62,13 +66,13 @@ namespace MinksMods.ModChallenge
                 if (receiver == null)
                     return;
 
-                #if DEBUG
+#if DEBUG
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "foobar", "blarg", false, null));
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p1.ToString(), "blarg", false, null));
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p1.GetType().ToString(), "blarg", false, null));
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p2.ToString(), "blarg", false, null));
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p2.GetType().ToString(), "blarg", false, null));
-                #endif
+#endif
             }
         }
 
@@ -79,6 +83,7 @@ namespace MinksMods.ModChallenge
             mink.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text, "debug", false, null));
         }
 #endif
+
     }
 
     [Serializable]
@@ -137,10 +142,23 @@ namespace MinksMods.ModChallenge
 
         public void Accept()
         {
-            //stage = stages.accepted;
+            stage = stages.accepted;
+            time = DateTime.Now;
+
+            ChallengeHandler ch = new ChallengeHandler(this);
+            System.Threading.Timer CallBackTimer = new System.Threading.Timer(ch.Tick);
+            CallBackTimer.Change(5000, 0);
+        }
+
+        public void Start()
+        {
             stage = stages.running;
             time = DateTime.Now;
-            //toto: start "game start timer"
+        }
+
+        public void End()
+        {
+            stage = stages.over;
         }
 
         public bool IsTimedOut()
@@ -158,8 +176,116 @@ namespace MinksMods.ModChallenge
 
             return false;
         }
-
     }
+
+
+    public class ChallengeHandler
+    {
+        private Challenge challenge;
+        private System.Threading.Timer timer;
+        private ClientInfo req_ci, rec_ci;
+        private Player req_p, rec_p;
+        private int Countdown = 3;
+
+        public ChallengeHandler(Challenge _c)
+        {
+            if (_c == null)
+            {
+                return;
+            }
+
+            challenge = _c;
+
+            rec_ci = ConsoleHelper.ParseParamIdOrName(challenge.Receiver);
+            rec_p = PersistentContainer.Instance.Players[rec_ci.playerId, false];
+
+            req_ci = ConsoleHelper.ParseParamIdOrName(challenge.Requester);
+            req_p = PersistentContainer.Instance.Players[req_ci.playerId, false];
+        }
+
+        public void Tick(System.Object stateinfo)
+        {
+            timer = (System.Threading.Timer)stateinfo;
+
+            if (challenge == null)
+            {
+                clean();
+            }
+
+            switch (challenge.Stage)
+            {
+                case Challenge.stages.accepted:
+
+                    if (Countdown > 0)
+                    {
+                        ShowStartCountdown(Countdown--);
+                        timer.Change(60000, 0);
+                    }
+                    else
+                    {
+                        challenge.Start();
+                        ShowStart();
+                        ShowDistances();
+                        timer.Change(60000, 0);
+                    }
+                    break;
+
+                case Challenge.stages.running:
+
+                    if (challenge.IsTimedOut())
+                    {
+                        challenge.End();
+                        ShowDraw();
+                        clean();
+                    }
+                    else
+                    {
+                        ShowDistances();
+                        timer.Change((int)new TimeSpan(0, ModChallenge.info_interval, 0).TotalMilliseconds, 0);
+                    }
+                    break;
+
+                default:
+
+                    clean();
+                    break;
+            }
+        }
+
+        public void ShowDistances()
+        {
+            //float dist = Vector3.Distance(rec_p.LastPosition.ToVector3(), req_p.LastPosition.ToVector3());
+            float dist = Vector3.Distance(rec_p.LastPosition.ToVector3(), new Vector3(0, 0));
+
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + rec_p.Name + " is " + (int)dist + "m to the TODO.[-]", "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + req_p.Name + " is " + (int)dist + "m to the TODO.[-]", "", false, null));
+        }
+
+        public void ShowStartCountdown(int minutes)
+        {
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]", "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]", "", false, null));
+        }
+
+        public void ShowStart()
+        {
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " started![-]", "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " started![-]", "", false, null));
+        }
+
+        public void ShowDraw()
+        {
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " timed out. Its a draw![-]", "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " timed out. Its a draw![-]", "", false, null));
+        }
+
+        public void clean()
+        {
+            timer.Dispose();
+        }
+    }
+
+
 
     public class ChallengeCmd : ConsoleCmdAbstract
     {
@@ -229,11 +355,15 @@ namespace MinksMods.ModChallenge
                                 {
                                     SdtdConsole.Instance.Output("Running challenge: " + c.Requester + " vs " + c.Receiver + ". Started at " + c.Time.ToString() + ".");
                                 }
+                                else if (c.Stage == Challenge.stages.accepted)
+                                {
+                                    SdtdConsole.Instance.Output("Your challenge will start soon.");
+                                }
                             }
                         }  
                         else
                         {
-                            SdtdConsole.Instance.Output("No open challenges found.");
+                            SdtdConsole.Instance.Output("No challenges found.");
                         }
                         break;
 
@@ -291,8 +421,8 @@ namespace MinksMods.ModChallenge
                                             {
                                                 c.Accept();
                                                 SdtdConsole.Instance.Output("You accepted the challenge.");
-                                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge! The challenge will start in 2 minutes! Get ready![-]", "", false, null));
-                                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " accepted your challenge! Challenge will start in 2 minutes! Get ready![-]", "", false, null));
+                                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge![-]", "", false, null));
+                                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " accepted your challenge![-]", "", false, null));
                                                 return;
                                             }
                                         }

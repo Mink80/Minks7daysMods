@@ -17,11 +17,17 @@
     Feature Ideas:
     * (global) Scorboard
     * use markers
+    * commands also work from chatwindow
+    * save challanges in history class
+    * giveup/cancel command
+    * time left ticker
 */
 #define DEBUG
 
 using System;
 using System.Collections.Generic;
+using System.Xml;
+using System.IO;
 using System.Threading;
 //using UnityEngine;
 using AllocsFixes.PersistentData;
@@ -33,18 +39,86 @@ namespace MinksMods.ModChallenge
     public static class ModChallenge
     {
         public static List<Challenge> Challenges = new List<Challenge>();
+        public static string filepath;
         public static int counter = 0;
 
         // settings
-        public static int request_timeout = 2;          // minutes (default 15)
-        public static int challenge_timeout = 3;        // minutes (default 45)
-        public static int info_interval = 1;            // minutes (default 2)
+        public static int request_duration;         // minutes (default 15)
+        public static int challenge_duration;       // minutes (default 45)
+        public static int info_interval;            // minutes (default 1)
         public static string message_color = "ff0000";  // rgb
         // ---
 
 #if DEBUG
         public static string mySteamID = "76561197981703289";
 #endif
+
+        public static void init()
+        {
+            filepath = GameUtils.GetSaveGameDir() + Path.DirectorySeparatorChar;
+            LoadSettingsFromXml();
+        }
+
+
+        public static void LoadSettingsFromXml()
+        {
+            XmlDocument doc = new XmlDocument();
+            string configfile = Path.Combine(filepath, "Minks_ModChallenge.xml");
+            if (File.Exists(configfile))
+            {
+                doc.Load(configfile);
+
+                XmlNode setting_request_duration, setting_challenge_timeout, setting_info_inverval;
+                XmlElement root = doc.DocumentElement;
+
+                setting_request_duration = root.SelectSingleNode("RequestDuration");
+                setting_challenge_timeout = root.SelectSingleNode("ChallengeDuration");
+                setting_info_inverval = root.SelectSingleNode("InfoInterval");
+
+                if (Int32.TryParse(setting_request_duration.InnerText, out request_duration) && Int32.TryParse(setting_challenge_timeout.InnerText, out challenge_duration) && Int32.TryParse(setting_challenge_timeout.InnerText, out info_interval))
+                {
+                    Log.Out("ModChallenge: Minks_ModChallenge.xml loaded.");
+                    return;
+                }
+            }
+            else
+            {
+                WriteSettingsFile(configfile);
+            }
+
+            // xml load failed, restoring defaults
+            request_duration = 15;
+            challenge_duration = 45;
+            info_interval = 1;
+            Log.Out("ModChallenge: Error loading Minks_ModChallenge.xml");
+        }
+
+        public static void WriteSettingsFile(string _xmlfile)
+        {
+            try
+            {
+                string content = "<?xml version='1.0'?>\n" +
+                                "<MinksModChallenge>\n\n" +
+                                "\t<!-- in Minutes-->\n" +
+                                "\t<RequestDuration> 15 </RequestDuration>\n\n" +
+                                "\t<!-- in Minutes-->\n" +
+                                "\t<ChallengeDuration> 45 </ChallengeDuration>\n\n" +
+                                "\t<!-- in Minutes -->\n" +
+                                "\t<InfoInterval> 1 </InfoInterval>\n\n" +
+                                "</MinksModChallenge>\n";
+
+                using (StreamWriter writer = new StreamWriter(_xmlfile))
+                {
+                    writer.Write(content);
+                }
+            }
+            catch (Exception Ex)
+            {
+                Log.Error("Exception in savinig file " + _xmlfile + ".");
+                Log.Exception(Ex);
+            }
+
+        }
 
         public static void AddChallenge(Challenge c)
         {
@@ -214,11 +288,11 @@ namespace MinksMods.ModChallenge
         {
             TimeSpan age = new TimeSpan(DateTime.Now.Subtract(time).Ticks);
             
-            if (stage == stages.requested && age.TotalMinutes > TimeSpan.FromMinutes(ModChallenge.request_timeout).TotalMinutes)
+            if (stage == stages.requested && age.TotalMinutes > TimeSpan.FromMinutes(ModChallenge.request_duration).TotalMinutes)
             {
                 return true;
             }
-            else if (stage == stages.running && age > TimeSpan.FromMinutes(ModChallenge.challenge_timeout))
+            else if (stage == stages.running && age > TimeSpan.FromMinutes(ModChallenge.challenge_duration))
             {
                 return true;
             }
@@ -528,6 +602,8 @@ namespace MinksMods.ModChallenge
                                     continue;
                                 }
 
+                                // todo: replace steamID with player name
+
                                 if (c.Stage == Challenge.stages.requested)
                                 {
                                     SdtdConsole.Instance.Output("Open challenge request: " + c.Requester + " challenged " + c.Receiver + " at " + c.Time.ToString() + ".");
@@ -550,8 +626,6 @@ namespace MinksMods.ModChallenge
 
                     // 1 parameter - invite for a challenge
                     case 1:
-
-                        // string receiver = _params[0];
 
                         if (player_challenges.Count > 0)
                         {
@@ -678,6 +752,14 @@ namespace MinksMods.ModChallenge
                 string playerID = senderinfo.RemoteClientInfo.playerId;
                 Player p = PersistentContainer.Instance.Players[playerID, false];
 
+                if ( _params.Count > 0 && _params[0] == "settings")
+                {
+                    SdtdConsole.Instance.Output("RequestDuration: " + ModChallenge.request_duration.ToString());
+                    SdtdConsole.Instance.Output("ChallengeDuration: " + ModChallenge.challenge_duration.ToString());
+                    SdtdConsole.Instance.Output("InfoInterval: " + ModChallenge.info_interval.ToString());
+                    return;
+                }
+
                 foreach (Challenge c in ModChallenge.Challenges)
                 {
                     SdtdConsole.Instance.Output(c.ID.ToString() + " " + c.Time.ToString() + " " + c.Requester + " " + c.Receiver + " " + c.Stage.ToString() + " " + c.Winner.ToString() );
@@ -697,6 +779,7 @@ namespace MinksMods.ModChallenge
             ModEvents.EntityKilled.RegisterHandler(EntityKilled);
             ModEvents.ChatMessage.RegisterHandler(ChatMessage);
             ModEvents.PlayerDisconnected.RegisterHandler(PlayerDisconnected);
+            ModChallenge.init();
         }
         public void EntityKilled(Entity a, Entity b)
         {

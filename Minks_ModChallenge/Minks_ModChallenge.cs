@@ -16,14 +16,14 @@
     .
     Feature Ideas:
     * (global) Scorboard
-    * 
+    * use markers
 */
 #define DEBUG
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using UnityEngine;
+//using UnityEngine;
 using AllocsFixes.PersistentData;
 
 namespace MinksMods.ModChallenge
@@ -40,7 +40,7 @@ namespace MinksMods.ModChallenge
         public static int challenge_timeout = 3;        // minutes (default 45)
         public static int info_interval = 1;            // minutes (default 2)
         public static string message_color = "ff0000";  // rgb
-                                                        // ---
+        // ---
 
 #if DEBUG
         public static string mySteamID = "76561197981703289";
@@ -48,31 +48,61 @@ namespace MinksMods.ModChallenge
 
         public static void AddChallenge(Challenge c)
         {
-            Challenges.Add(c);
+            if (c != null)
+            {
+                Challenges.Add(c);
+            }
         }
 
         public static void DelChallenge(Challenge c)
         {
-            Challenges.Remove(c);
+            if (c != null)
+            {
+                Challenges.Remove(c);
+            }
         }
 
-        public static void EntityKilled(Entity p1, Entity p2)
+        public static void EntityKilled(Entity winner, Entity loser)
         {
-            foreach (KeyValuePair<string, Player> kvp in PersistentContainer.Instance.Players.Dict)
+            if (winner == null || loser == null)
             {
-                Player p = kvp.Value;
-                ClientInfo receiver = ConsoleHelper.ParseParamIdOrName(kvp.Key);
+                return;
+            }
 
-                if (receiver == null)
+            foreach (Challenge c in Challenges)
+            {
+                if (c.Stage == Challenge.stages.running)
+                {
+                    ClientInfo winner_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(winner.belongsPlayerId.ToString());
+                    ClientInfo loser_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(loser.belongsPlayerId.ToString());
+
+                    if (winner_ci == null || loser_ci == null)
+                    {
+                        return;
+                    }
+
+                    if ((winner_ci.playerId == c.Receiver || winner_ci.playerId == c.Requester) && (loser_ci.playerId == c.Receiver || loser_ci.playerId == c.Requester ))
+                    {
+                        c.Handler.Win(winner_ci);
+                    }
+                }
+            }
+        }
+
+        public static void PlayerDisconnected(ClientInfo _cInfo)
+        {
+            if (_cInfo == null)
+            {
+                return;
+            }
+
+            foreach (Challenge c in Challenges)
+            {
+                if (c.Receiver == _cInfo.playerId || c.Receiver == _cInfo.playerId)
+                {
+                    c.DisconnectFromRunningChallenge(_cInfo);
                     return;
-
-#if DEBUG
-                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "foobar", "blarg", false, null));
-                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p1.ToString(), "blarg", false, null));
-                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p1.GetType().ToString(), "blarg", false, null));
-                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p2.ToString(), "blarg", false, null));
-                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, p2.GetType().ToString(), "blarg", false, null));
-#endif
+                }
             }
         }
 
@@ -109,6 +139,7 @@ namespace MinksMods.ModChallenge
         private winoptions winner;
         private string requester, receiver;
         private DateTime time = new DateTime();
+        private ChallengeHandler handler;
 
         public Challenge(string _requester, string _receiver, int _id)
         {
@@ -118,6 +149,11 @@ namespace MinksMods.ModChallenge
             time = DateTime.Now;
             id = _id;
             winner = winoptions.none;
+        }
+
+        public int ID
+        {
+            get { return id; }
         }
 
         public string Requester
@@ -135,9 +171,20 @@ namespace MinksMods.ModChallenge
             get { return stage; }
         }
 
+        public winoptions Winner
+        {
+            get { return winner; }
+            set { winner = value;  }
+        }
+
         public DateTime Time
         {
             get { return time; }
+        }
+
+        public ChallengeHandler Handler
+        {
+            get { return handler; }
         }
 
         public void Accept()
@@ -145,8 +192,8 @@ namespace MinksMods.ModChallenge
             stage = stages.accepted;
             time = DateTime.Now;
 
-            ChallengeHandler ch = new ChallengeHandler(this);
-            System.Threading.Timer CallBackTimer = new System.Threading.Timer(ch.Tick);
+            handler = new ChallengeHandler(this);
+            System.Threading.Timer CallBackTimer = new System.Threading.Timer(handler.Tick);
             CallBackTimer.Change(5000, 0);
         }
 
@@ -159,6 +206,8 @@ namespace MinksMods.ModChallenge
         public void End()
         {
             stage = stages.over;
+            // kills timer
+            handler.clean();
         }
 
         public bool IsTimedOut()
@@ -176,6 +225,23 @@ namespace MinksMods.ModChallenge
 
             return false;
         }
+
+        public void DisconnectFromRunningChallenge(ClientInfo _cInfo)
+        {
+            if (_cInfo == null)
+            {
+                return;
+            }
+
+            if (_cInfo.playerId == receiver)
+            {
+                handler.Win(handler.req_ci);
+            }
+            else
+            {
+                handler.Win(handler.rec_ci);
+            }
+        }
     }
 
 
@@ -183,7 +249,7 @@ namespace MinksMods.ModChallenge
     {
         private Challenge challenge;
         private System.Threading.Timer timer;
-        private ClientInfo req_ci, rec_ci;
+        public ClientInfo req_ci, rec_ci;
         private Player req_p, rec_p;
         private int Countdown = 3;
 
@@ -219,14 +285,22 @@ namespace MinksMods.ModChallenge
                     if (Countdown > 0)
                     {
                         ShowStartCountdown(Countdown--);
+#if DEBUG
+                        timer.Change(1000, 0);
+#else
                         timer.Change(60000, 0);
+#endif
                     }
                     else
                     {
                         challenge.Start();
                         ShowStart();
                         ShowDistances();
+#if DEBUG
+                        timer.Change(1000, 0);
+#else
                         timer.Change(60000, 0);
+#endif
                     }
                     break;
 
@@ -234,14 +308,18 @@ namespace MinksMods.ModChallenge
 
                     if (challenge.IsTimedOut())
                     {
-                        challenge.End();
                         ShowDraw();
-                        clean();
+                        challenge.End();
                     }
                     else
                     {
                         ShowDistances();
+#if DEBUG
+                        timer.Change(1000, 0);
+                        
+#else
                         timer.Change((int)new TimeSpan(0, ModChallenge.info_interval, 0).TotalMilliseconds, 0);
+#endif
                     }
                     break;
 
@@ -252,19 +330,54 @@ namespace MinksMods.ModChallenge
             }
         }
 
+
         public void ShowDistances()
         {
-            //float dist = Vector3.Distance(rec_p.LastPosition.ToVector3(), req_p.LastPosition.ToVector3());
-            float dist = Vector3.Distance(rec_p.LastPosition.ToVector3(), new Vector3(0, 0));
+            //other way of getting distance: Entitiy.GetDistance
+#if DEBUG
+            float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), new UnityEngine.Vector3(0, 0));
+#else
+            float dist = Vector3.Distance(rec_p.LastPosition.ToVector3(), req_p.LastPosition.ToVector3());
+#endif
+            string dir = GetDirection(req_p.LastPosition, rec_p.LastPosition);
+            if (dir == "")
+            {
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + rec_p.Name + " is " + (int)dist + "m away. In another hight.[-]", "", false, null));
+            }
+            else
+            {
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + rec_p.Name + " is " + (int)dist + "m to the " + dir + ".[-]", "", false, null));
+            }
 
-            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + rec_p.Name + " is " + (int)dist + "m to the TODO.[-]", "", false, null));
-            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + req_p.Name + " is " + (int)dist + "m to the TODO.[-]", "", false, null));
+            dir = GetDirection(rec_p.LastPosition, req_p.LastPosition);
+            if (dir == "")
+            {
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + req_p.Name + " is " + (int)dist + "m away. In another hight.[-]", "", false, null));
+            }
+            else
+            {
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + req_p.Name + " is " + (int)dist + "m to the " + GetDirection(rec_p.LastPosition, req_p.LastPosition) + ".[-]", "", false, null));
+            }
         }
+
 
         public void ShowStartCountdown(int minutes)
         {
-            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]", "", false, null));
-            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]", "", false, null));
+            string text_req, text_rec = "";
+
+            if (minutes == 3)
+            {
+                text_req = "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]";
+                text_rec = "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " will start in " + minutes + " min. Your relative position will be revealed to your challenger.[-]";
+            }
+            else
+            {
+                text_req = "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " will start in " + minutes + " min.[-]";
+                text_rec = "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " will start in " + minutes + " min.[-]";
+            }
+
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_req, "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_rec, "", false, null));
         }
 
         public void ShowStart()
@@ -273,18 +386,86 @@ namespace MinksMods.ModChallenge
             rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " started![-]", "", false, null));
         }
 
+        public void Win(ClientInfo _ci)
+        {
+            ClientInfo winner = _ci;
+            if (winner == null)
+            {
+                return;
+            }
+
+            // send message to winner/loser
+            if (winner.playerId == challenge.Receiver)
+            {
+                challenge.Winner = Challenge.winoptions.receiver;
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + rec_p.Name + "![-]", "", false, null));
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + req_p.Name + "![-]", "", false, null));
+            }
+            else
+            {
+                challenge.Winner = Challenge.winoptions.requester;
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + rec_p.Name + "![-]", "", false, null));
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + req_p.Name + "![-]", "", false, null));
+            }
+
+            // send a message to all players (except winner/loser)
+            foreach (KeyValuePair<string, Player> kvp in PersistentContainer.Instance.Players.Dict)
+            {
+                Player p = kvp.Value;
+                ClientInfo p_ci = ConsoleHelper.ParseParamIdOrName(kvp.Key);
+
+                if (p_ci == null || p_ci.playerId == challenge.Receiver || p_ci.playerId == challenge.Requester)
+                    continue;
+
+                p_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + winner.playerName + " won a Challange against " + ((challenge.Winner == Challenge.winoptions.receiver) ? rec_ci.playerName : req_ci.playerName) + "![-]", "", false, null));
+            }
+        }
+
         public void ShowDraw()
         {
             req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " timed out. Its a draw![-]", "", false, null));
             rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " timed out. Its a draw![-]", "", false, null));
         }
 
+
+        public string GetDirection(Vector3i thisone, Vector3i otherone)
+        {
+            string response = "";
+#if DEBUG
+            otherone.x = 0;
+            otherone.y = 0;
+            otherone.z = 0;
+#endif
+
+            if (thisone.z < otherone.z)
+            {
+                response = "north";
+            }
+            else if (thisone.z > otherone.z)
+            {
+                response = "south";
+            }
+
+            if (thisone.x < otherone.x)
+            {
+                
+                response += ((response.Length > 1) ? "-" : "") + "east";
+            }
+            else if (thisone.x > otherone.x)
+            {
+                response += ((response.Length > 1) ? "-" : "") + "west";
+            }
+
+            // "" will be returned if otherones position == thisones position (hight _not_ considered).
+            return response;
+        }
+
+
         public void clean()
         {
             timer.Dispose();
         }
     }
-
 
 
     public class ChallengeCmd : ConsoleCmdAbstract
@@ -465,12 +646,57 @@ namespace MinksMods.ModChallenge
     }
 
 
+    public class ListAllChallenges : ConsoleCmdAbstract
+    {
+        public override string GetDescription()
+        {
+            return "List challenges in all states.";
+        }
+
+        public override string GetHelp()
+        {
+            return "ListAllChallenges" +
+                   "Usage:\n" +
+                   "   ListAllChallenges \n";
+        }
+
+        public override string[] GetCommands()
+        {
+            return new[] { "ListAllChallanges", "lc" };
+        }
+
+        public override int DefaultPermissionLevel
+        {
+            get { return 0; }
+        }
+
+        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
+        {
+            try
+            {
+                CommandSenderInfo senderinfo = _senderInfo;
+                string playerID = senderinfo.RemoteClientInfo.playerId;
+                Player p = PersistentContainer.Instance.Players[playerID, false];
+
+                foreach (Challenge c in ModChallenge.Challenges)
+                {
+                    SdtdConsole.Instance.Output(c.ID.ToString() + " " + c.Time.ToString() + " " + c.Requester + " " + c.Receiver + " " + c.Stage.ToString() + " " + c.Winner.ToString() );
+                }
+            }
+            catch (Exception Ex)
+            {
+                SdtdConsole.Instance.Output(Ex.ToString());
+            }
+        }
+    }
+
     public class API : IModApi
     {
         public void InitMod()
         {
             ModEvents.EntityKilled.RegisterHandler(EntityKilled);
             ModEvents.ChatMessage.RegisterHandler(ChatMessage);
+            ModEvents.PlayerDisconnected.RegisterHandler(PlayerDisconnected);
         }
         public void EntityKilled(Entity a, Entity b)
         {
@@ -492,6 +718,22 @@ namespace MinksMods.ModChallenge
             }
         }
 
+        public void PlayerDisconnected(ClientInfo _cInfo, bool _bShutdown)
+        {
+            try
+            {
+                Player p = PersistentContainer.Instance.Players[_cInfo.playerId, false];
+                if (p != null)
+                {
+                    ModChallenge.PlayerDisconnected(_cInfo);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Out("Error in AllocsLogFunctions.PlayerDisconnected: " + e);
+            }
+        }
+
         public bool isPlayer(Entity e)
         {
             if ( e != null && e.GetType() == typeof(EntityPlayer) )
@@ -504,7 +746,7 @@ namespace MinksMods.ModChallenge
 
         public bool ChatMessage(ClientInfo _cInfo, EChatType _type, int _senderId, string _msg, string _mainName, bool _localizeMain, List<int> _recipientEntityIds)
         {
-            if (string.IsNullOrEmpty(_msg) || !_msg.EqualsCaseInsensitive("/mink"))
+            if (string.IsNullOrEmpty(_msg) || !_msg.EqualsCaseInsensitive("/mink") || !_msg.EqualsCaseInsensitive("/c"))
             {
                 return true;
             }

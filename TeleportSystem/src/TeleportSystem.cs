@@ -3,17 +3,17 @@
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    .
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    .
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+    .
     Written in Jan 2019 by Kai Sassmannshausen <minkio@sassie.de>
-
+    .
     Feature Ideas:
     * Transportation fee (may depending on distance)
     * Allied shared destinations
@@ -94,7 +94,7 @@ namespace MinksMods.MinksTeleportSystem
             }
             catch (Exception Ex)
             {
-                Log.Error("Exception in savinig file " + _xmlfile + ".");
+                Log.Error("Exception in writing file " + _xmlfile + ".");
                 Log.Exception(Ex);
             }
 
@@ -675,7 +675,7 @@ namespace MinksMods.MinksTeleportSystem
                 if (p == null)
                     return;
 
-                if (dest == null || dest.owner != p.Name)
+                if (dest == null || (dest.owner != p.Name && dest.global == false) )
                 {
                     SdtdConsole.Instance.Output("Destination name not found or private.");
                     return;

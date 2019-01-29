@@ -44,6 +44,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>7dtd-binaries\LogLibrary.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="System.XML" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -55,7 +56,9 @@
     <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Minks_ModChallenge.cs" />
+    <Compile Include="src\API.cs" />
+    <Compile Include="src\Commands.cs" />
+    <Compile Include="src\Minks_ModChallenge.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

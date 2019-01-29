@@ -26,7 +26,7 @@
     * Start fresh server with this mod: 1. start will crash (directory does not exist)
     * 
 */
-#define RELEASE
+#define DEBUG
 
 using System;
 using System.Collections.Generic;
@@ -49,14 +49,14 @@ namespace MinksMods.ModChallenge
 
         // settings
         public static int request_duration;                 // minutes (default 15)
-        public static int challenge_duration;               // minutes (default 45)
+        public static int challenge_duration;               // minutes (default 45)iscord
         public static int info_interval;                    // seconds (default 10)
         public static string message_color = "ff0000";      // rgb
         // ---
 
-//#if DEBUG
+#if DEBUG
         public static string mySteamID = "76561197981703289";
-//#endif
+#endif
 
         public static void init()
         {
@@ -102,7 +102,7 @@ namespace MinksMods.ModChallenge
             request_duration = 15;
             challenge_duration = 45;
             info_interval = 10;
-            Log.Out("ModChallenge: Error loading Minks_ModChallenge.xml. Using defaults.");
+            Log.Warning("ModChallenge: Error loading Minks_ModChallenge.xml. Using defaults.");
         }
 
         public static void WriteSettingsFile(string _xmlfile)
@@ -149,12 +149,15 @@ namespace MinksMods.ModChallenge
         }
 
         // is only called if at least one player is involved
-        public static void EntityKilled(Entity loser, Entity winner)
+        public static void OnEntityKilled(Entity victim, Entity killer)
         {
-            print_debug("winner: " + loser.ToString());
-            print_debug("loser: " + winner.ToString());
+#if DEBUG
+            print_debug("loser: " + victim.ToString());
+            print_debug("winner: " + killer.ToString());
+            return;
+#endif
 
-            if (loser == null || winner == null)
+            if (victim == null || killer == null)
             {
                 return;
             }
@@ -163,8 +166,12 @@ namespace MinksMods.ModChallenge
             {
                 if (c.Stage == Challenge.stages.running)
                 {
-                    ClientInfo winner_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(loser.belongsPlayerId.ToString());
-                    ClientInfo loser_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(winner.belongsPlayerId.ToString());
+#if DEBUG
+                    Log.Error("EntityKilled called");
+#endif
+
+                    ClientInfo winner_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(victim.belongsPlayerId.ToString());
+                    ClientInfo loser_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(killer.belongsPlayerId.ToString());
 
                     if (winner_ci == null || loser_ci == null)
                     {
@@ -181,13 +188,38 @@ namespace MinksMods.ModChallenge
                         c.Handler.Win(c.Handler.rec_ci);
                     }
 
-                    /* Option 2: challenger must kill other challenger to win
+                    /* Option 2: challenger must kill other challenger to win (DOES NOT WORK BECAUSE EntityKilled is not called if a player is killed by a zombie!
                     if ((winner_ci.playerId == c.Receiver || winner_ci.playerId == c.Requester) && (loser_ci.playerId == c.Receiver || loser_ci.playerId == c.Requester ))
                     {
                         c.Handler.Win(winner_ci);
                     }
                     */
                 }
+            }
+        }
+
+        public static void OnPlayerKilled(string _killedName)
+        {
+            if (string.IsNullOrEmpty(_killedName))
+            {
+                return;
+            }
+
+            foreach (Challenge c in Challenges)
+            {
+                if (c.Stage == Challenge.stages.running)
+                {
+                    if (c.Handler.rec_ci.playerName == _killedName)
+                    {
+                        c.Handler.Win(c.Handler.req_ci);
+                    }
+                    else if (c.Handler.req_ci.playerName == _killedName)
+                    {
+                        c.Handler.Win(c.Handler.rec_ci);
+                    }
+                    return;
+                }
+                    
             }
         }
 
@@ -231,17 +263,17 @@ namespace MinksMods.ModChallenge
                 { SoundEvents.won       , "quest_master_complete" },
                 { SoundEvents.lost      , "quest_failed" },
                 { SoundEvents.draw      , "quest_failed" },
-                { SoundEvents.info      , "swoosh" },
+                { SoundEvents.info      , "recipe_unlocked" },
                 { SoundEvents.gunshot   , "44magnum_fire" }
             };
 
-//#if DEBUG
+#if DEBUG
         public static void print_debug(string text)
         {
             ClientInfo mink = ConsoleHelper.ParseParamIdOrName(ModChallenge.mySteamID);
             mink.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text, "debug", false, null));
         }
-//#endif
+#endif
 
     }
 
@@ -304,7 +336,6 @@ namespace MinksMods.ModChallenge
         public winoptions Winner
         {
             get { return winner; }
-            set { winner = value;  }
         }
 
         public DateTime Time
@@ -332,9 +363,11 @@ namespace MinksMods.ModChallenge
             time = DateTime.Now;
         }
 
-        public void End()
+        public void End(winoptions _winner)
         {
             stage = stages.over;
+            winner = _winner;
+
             // kills timer
             handler.clean();
         }
@@ -432,8 +465,8 @@ namespace MinksMods.ModChallenge
                         timer.Change(5000, 0);
 #else
                         timer.Change(60000, 0);
-                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
 #endif
+                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
                     }
                     break;
 
@@ -443,10 +476,8 @@ namespace MinksMods.ModChallenge
                     {
                         ShowDraw();
                         SendSoundPackage(rec_ci, ModChallenge.SoundEvents.start);
-#if !DEBUG
                         SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
-#endif
-                        challenge.End();
+                        challenge.End(Challenge.winoptions.none);
                     }
                     else
                     {
@@ -454,11 +485,10 @@ namespace MinksMods.ModChallenge
                         SendSoundPackage(rec_ci, ModChallenge.SoundEvents.info);
 #if DEBUG
                         timer.Change(5000, 0);
-
 #else
                         timer.Change((int)new TimeSpan(0, 0, ModChallenge.info_interval).TotalMilliseconds, 0);
-                        SendSoundPackage(rec_ci, ModChallenge.SoundEvents.info);
 #endif
+                        SendSoundPackage(rec_ci, ModChallenge.SoundEvents.info);
                     }
                     break;
 
@@ -484,11 +514,11 @@ namespace MinksMods.ModChallenge
         public void ShowDistances()
         {
             //other way of getting distance: Entitiy.GetDistance
-#if DEBUG
-            float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), new UnityEngine.Vector3(0, 0));
-#else
+//#if DEBUG
+//            float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), new UnityEngine.Vector3(0, 0));
+//#else
             float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), req_p.LastPosition.ToVector3());
-#endif
+//#endif
             string dir = GetDirection(req_p.LastPosition, rec_p.LastPosition);
             if (dir == "")
             {
@@ -527,6 +557,7 @@ namespace MinksMods.ModChallenge
             }
 
             req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_req, "", false, null));
+
             rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_rec, "", false, null));
         }
 
@@ -540,6 +571,7 @@ namespace MinksMods.ModChallenge
         public void Win(ClientInfo _ci)
         {
             ClientInfo winner = _ci;
+
             if (winner == null)
             {
                 return;
@@ -548,26 +580,23 @@ namespace MinksMods.ModChallenge
             // send message to winner/loser
             if (winner.playerId == challenge.Receiver)
             {
-                challenge.Winner = Challenge.winoptions.receiver;
-
                 req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + rec_p.Name + "![-]", "", false, null));
                 rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + req_p.Name + "![-]", "", false, null));
 
                 SendSoundPackage(rec_ci, ModChallenge.SoundEvents.won);
-#if !DEBUG
-                SendSoundPackage(req_ci, ModChallenge.SoundEvents.lost);   
-#endif
+                SendSoundPackage(req_ci, ModChallenge.SoundEvents.lost);
+
+                challenge.End(Challenge.winoptions.receiver);
             }
             else
             {
-                challenge.Winner = Challenge.winoptions.requester;
                 req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + rec_p.Name + "![-]", "", false, null));
                 rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + req_p.Name + "![-]", "", false, null));
 
                 SendSoundPackage(rec_ci, ModChallenge.SoundEvents.lost);
-#if !DEBUG
                 SendSoundPackage(req_ci, ModChallenge.SoundEvents.won);
-#endif
+
+                challenge.End(Challenge.winoptions.requester);
             }
 
             // send a message to all players (except winner/loser)
@@ -594,11 +623,13 @@ namespace MinksMods.ModChallenge
         public string GetDirection(Vector3i thisone, Vector3i otherone)
         {
             string response = "";
+/*
 #if DEBUG
             otherone.x = 0;
             otherone.y = 0;
             otherone.z = 0;
 #endif
+*/
 
             if (thisone.z < otherone.z)
             {
@@ -629,335 +660,5 @@ namespace MinksMods.ModChallenge
             timer.Dispose();
         }
     }
-
-
-    public class ChallengeCmd : ConsoleCmdAbstract
-    {
-        public override string GetDescription()
-        {
-            return "Send out and accept challenges.";
-        }
-
-        public override string GetHelp()
-        {
-            return "Challenge \n" +
-                   "Usage:\n" +
-                   "  Challenge [player] [accept|revoke] \n\n" +
-                   "Examples:\n" +
-                   "  You use:  Challenge Joe \n" +
-                   "  Joe uses: Challenge You accept \n\n" +
-                   "  Challenge without any parameters shows your current challenge invites\n" +
-                   "  To revoke a challenge: Challenge Joe revoke \n";
-        }
-
-        public override string[] GetCommands()
-        {
-            return new[] { "Challenge", "c" };
-        }
-
-        public override int DefaultPermissionLevel
-        {
-            get { return 1000; }
-        }
-
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
-        {
-            try
-            {
-                CommandSenderInfo senderinfo = _senderInfo;
-                string playerID = senderinfo.RemoteClientInfo.playerId;
-                List<Challenge> player_challenges = new List<Challenge>();
-
-                foreach (Challenge c in ModChallenge.Challenges)
-                {
-                    if ((c.Receiver == playerID || c.Requester == playerID) && c.Stage != Challenge.stages.over)
-                    {
-                        player_challenges.Add(c);
-                    }
-                }
-
-                switch (_params.Count)
-                {
-                    // no parameter - show requested/running challenges
-                    case 0:
-
-                        if (player_challenges.Count > 0)
-                        {
-                            foreach (Challenge c in player_challenges)
-                            {
-                                if (c.IsTimedOut())
-                                {
-                                    ModChallenge.DelChallenge(c);
-                                    continue;
-                                }
-
-                                // todo: replace steamID with player name
-
-                                if (c.Stage == Challenge.stages.requested)
-                                {
-                                    SdtdConsole.Instance.Output("Open challenge request: " + c.Requester + " challenged " + c.Receiver + " at " + c.Time.ToString() + ".");
-                                }
-                                else if (c.Stage == Challenge.stages.running)
-                                {
-                                    SdtdConsole.Instance.Output("Running challenge: " + c.Requester + " vs " + c.Receiver + ". Started at " + c.Time.ToString() + ".");
-                                }
-                                else if (c.Stage == Challenge.stages.accepted)
-                                {
-                                    SdtdConsole.Instance.Output("Your challenge will start soon.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            SdtdConsole.Instance.Output("No challenges found.");
-                        }
-                        break;
-
-                    // 1 parameter - invite for a challenge
-                    case 1:
-
-                        if (_params[0].ToLower() == senderinfo.RemoteClientInfo.playerName.ToLower())
-                        {
-#if DEBUG
-                            SdtdConsole.Instance.Output("Debug mode. You can challenge yourself.");
-#else
-                            SdtdConsole.Instance.Output("You can not challenge yourself.");
-                            return;
-#endif
-                        }
-
-                        if (player_challenges.Count > 0)
-                        {
-                            foreach (Challenge c in player_challenges)
-                            {
-                                if (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted)
-                                {
-                                    SdtdConsole.Instance.Output("You can not do that while you are in an accepted or running challenge.");
-                                    return;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
-                            if (receiver != null)
-                            {
-                                Challenge c = new Challenge(playerID, receiver.playerId, ++ModChallenge.counter);
-                                ModChallenge.AddChallenge(c);
-                                SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
-
-                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You challenged " + receiver.playerName + ".[-]", "", false, null));
-                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You were challenged by " + senderinfo.RemoteClientInfo.playerName + ".[-]", "", false, null));
-
-                                c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.invite);
-                                c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.invite);
-                            }
-                            else
-                            {
-                                SdtdConsole.Instance.Output("No such player.");
-                            }
-
-                        }
-                       
-                        break;
-
-                    // 2 parameter - accept or revoke challenge
-                    case 2:
-
-                        if (_params[1] == "accept" || _params[1] == "revoke")
-                        {
-                            ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
-
-                            foreach (Challenge c in player_challenges)
-                            {
-                                if (c.Stage == Challenge.stages.requested)
-                                {
-                                    if (c.Receiver == playerID && _params[1] == "accept")
-                                    {
-                                        if (!c.IsTimedOut())
-                                        {
-                                            if (receiver != null)
-                                            {
-                                                c.Accept();
-                                                SdtdConsole.Instance.Output("You accepted the challenge.");
-                                                senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge![-]", "", false, null));
-                                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " accepted your challenge![-]", "", false, null));
-                                                c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.accepted);
-#if !DEBUG
-                                                c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.accepted);
-#endif
-                                                return;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            SdtdConsole.Instance.Output("This challenge request has been timed out.");
-                                            //c.Handler.PlaySounds();
-                                            ModChallenge.DelChallenge(c);
-                                            return;
-                                        }
-                                    }
-                                    else if (c.Requester == playerID && _params[1] == "revoke")
-                                    {
-                                        SdtdConsole.Instance.Output("You revoked the challenge.");
-                                        senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You revoked the challenge.[-]", "", false, null));
-                                        receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " has revoked the challenge invite![-]", "", false, null));
-                                        c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.revoked);
-#if !DEBUG
-                                        c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.revoked);
-#endif
-                                        ModChallenge.DelChallenge(c);
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            SdtdConsole.Instance.Output("Second parameter must be 'accept' or 'revoke'.\n" + GetHelp());
-                        }
-
-                        break;
-
-
-                    default:
-                        SdtdConsole.Instance.Output(GetHelp());
-                        break;
-                }
-            }
-            catch (Exception Ex)
-            {
-                SdtdConsole.Instance.Output(Ex.ToString());
-            }
-        }
-    }
-
-
-    public class ListAllChallenges : ConsoleCmdAbstract
-    {
-        public override string GetDescription()
-        {
-            return "List challenges in all states.";
-        }
-
-        public override string GetHelp()
-        {
-            return "ListAllChallenges" +
-                   "Usage:\n" +
-                   "   ListAllChallenges \n";
-        }
-
-        public override string[] GetCommands()
-        {
-            return new[] { "ListAllChallenges", "lc" };
-        }
-
-        public override int DefaultPermissionLevel
-        {
-            get { return 0; }
-        }
-
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
-        {
-            try
-            {
-                CommandSenderInfo senderinfo = _senderInfo;
-                string playerID = senderinfo.RemoteClientInfo.playerId;
-                Player p = PersistentContainer.Instance.Players[playerID, false];
-
-                if ( _params.Count > 0 && _params[0] == "settings")
-                {
-#if DEBUG
-                    SdtdConsole.Instance.Output("Debug Mode enabled.");
-#else
-                    SdtdConsole.Instance.Output("Release Mode");
-#endif
-                    SdtdConsole.Instance.Output("RequestDuration: " + ModChallenge.request_duration.ToString() + " minutes");
-                    SdtdConsole.Instance.Output("ChallengeDuration: " + ModChallenge.challenge_duration.ToString() + " minutes");
-                    SdtdConsole.Instance.Output("InfoInterval: " + ModChallenge.info_interval.ToString() + " seconds");
-                    return;
-                }
-
-                foreach (Challenge c in ModChallenge.Challenges)
-                {
-                    SdtdConsole.Instance.Output(c.ID.ToString() + " " + c.Time.ToString() + " " + c.Requester + " " + c.Receiver + " " + c.Stage.ToString() + " " + c.Winner.ToString() );
-                }
-            }
-            catch (Exception Ex)
-            {
-                SdtdConsole.Instance.Output(Ex.ToString());
-            }
-        }
-    }
-
-    public class API : IModApi
-    {
-        public void InitMod()
-        {
-            ModEvents.EntityKilled.RegisterHandler(EntityKilled);
-            ModEvents.ChatMessage.RegisterHandler(ChatMessage);
-            ModEvents.PlayerDisconnected.RegisterHandler(PlayerDisconnected);
-            ModChallenge.init();
-        }
-        public void EntityKilled(Entity a, Entity b)
-        {
-            try
-            {
-                if (isPlayer(a) || isPlayer(b))
-                {
-                    ModChallenge.EntityKilled( a, b );
-                }
-            }
-            catch(Exception Ex)
-            {
-                Log.Exception(Ex);
-            }
-        }
-
-        public void PlayerDisconnected(ClientInfo _cInfo, bool _bShutdown)
-        {
-            try
-            {
-                Player p = PersistentContainer.Instance.Players[_cInfo.playerId, false];
-                if (p != null)
-                {
-                    ModChallenge.PlayerDisconnected(_cInfo);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Out("Error in ModChallange.PlayerDisconnected: " + e);
-            }
-        }
-
-        public bool isPlayer(Entity e)
-        {
-            if ( e != null && e.GetType() == typeof(EntityPlayer) )
-            {
-                return true;
-            }
-            
-            return false;
-        }
-
-        public bool ChatMessage(ClientInfo _cInfo, EChatType _type, int _senderId, string _msg, string _mainName, bool _localizeMain, List<int> _recipientEntityIds)
-        {
-            if (string.IsNullOrEmpty(_msg) || !_msg.EqualsCaseInsensitive("/mink") || !_msg.EqualsCaseInsensitive("/c"))
-            {
-                return true;
-            }
-
-            if (_cInfo != null)
-            {
-                Log.Out("Sent chat hook reply to {0}", _cInfo.playerId);
-                _cInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "Thats the author of ModChallenge!", "", false, null));
-            }
-            else
-            {
-                Log.Error("ChatHookExample: Argument _cInfo null on message: {0}", _msg);
-            }
-
-            return false;
-        }
-    }
 }
+

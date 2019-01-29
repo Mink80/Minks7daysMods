@@ -7,6 +7,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinksTeleportSystem", "Tele
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tools", "Tools\Tools.csproj", "{64247DF8-4196-4B1D-A419-4CBD2D54598D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xmlread", "ConsoleApplication1\xmlread.csproj", "{AD2F1F85-2174-41DD-90AD-1F41A95A5749}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{64C3A678-B1D3-4DD6-AD39-678587A74224}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Minks_ModChallenge", "Minks_ModChallenge\Minks_ModChallenge.csproj", "{5BA306ED-997B-46F0-A82C-05A2D4E03A39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +30,14 @@ Global
 		{64247DF8-4196-4B1D-A419-4CBD2D54598D}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{64247DF8-4196-4B1D-A419-4CBD2D54598D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64247DF8-4196-4B1D-A419-4CBD2D54598D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

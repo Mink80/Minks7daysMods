@@ -17,33 +17,39 @@ namespace MinksMods.ModChallenge
             ModChallenge.init();
         }
 
-        private bool GameMessage(ClientInfo _ci, EnumGameMessages _type, string _string1, string _playerName, bool _bool1, string _string3, bool _bool2)
+        private bool GameMessage(ClientInfo _ci, EnumGameMessages _type, string _string1, string _playerName, bool _bool1, string _killerName, bool _bool2)
         {
             //Field Debug
 #if DEBUG
             Log.Out("type: " + _type.ToString());       // EnumGameMessages
             Log.Out("string1: " + _string1);            // Unknown; "" on Join and Killed
-            Log.Out("string2: " + _playerName);            // PlayerName
-            Log.Out("string3: " + _string3);            // Unknown; "" on Join and Killed
-            Log.Out("bool1: " + _bool1.ToString());     // Unknown; false on Join and Killed
-            Log.Out("bool2: " + _bool2.ToString());     // Unknown; false on Join and Killed
+            Log.Out("string2: " + _playerName);         // PlayerName
+            Log.Out("string3: " + _killerName);         //  killer name in a pvp kill @EnumGameMessages.EntityWasKilled
+            Log.Out("bool1: " + _bool1.ToString());    // Unknown; false on Join and Killed
+            Log.Out("bool2: " + _bool2.ToString());    // Unknown; false on Join and Killed
 #endif
             
             if (_type == EnumGameMessages.EntityWasKilled && !string.IsNullOrEmpty(_playerName))
             {
-                ModChallenge.OnPlayerKilled(_playerName);
+                ModChallenge.OnPlayerKilled(_playerName, _killerName);
+            }
+
+            if (_type == EnumGameMessages.LeftGame && !string.IsNullOrEmpty(_playerName))
+            {
+                ModChallenge.OnPlayerLeft(_playerName);
             }
 
             return true;
         }
 
+        // sadly will not be called if player kills player
         public void EntityKilled(Entity a, Entity b)
         {
             try
             {
                 if (isPlayer(a) || isPlayer(b))
                 {
-                    ModChallenge.OnEntityKilled(a, b);
+                    //ModChallenge.OnEntityKilled(a, b);
                 }
             }
             catch (Exception Ex)

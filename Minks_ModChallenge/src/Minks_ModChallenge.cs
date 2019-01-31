@@ -24,7 +24,8 @@
     * 
     Known Issues:
     * Start fresh server with this mod: 1. start will crash (directory does not exist)
-    * 
+    * add multiple invites
+    * check if player kills player (other event)
 */
 #define DEBUG
 
@@ -45,11 +46,12 @@ namespace MinksMods.ModChallenge
     {
         public static List<Challenge> Challenges = new List<Challenge>();
         public static string filepath;
+
         public static int counter = 0;
 
         // settings
         public static int request_duration;                 // minutes (default 15)
-        public static int challenge_duration;               // minutes (default 45)iscord
+        public static int challenge_duration;               // minutes (default 45)
         public static int info_interval;                    // seconds (default 10)
         public static string message_color = "ff0000";      // rgb
         // ---
@@ -144,61 +146,13 @@ namespace MinksMods.ModChallenge
         {
             if (c != null)
             {
+                c.Handler.clean();
                 Challenges.Remove(c);
             }
         }
 
-        // is only called if at least one player is involved
-        public static void OnEntityKilled(Entity victim, Entity killer)
-        {
-#if DEBUG
-            print_debug("loser: " + victim.ToString());
-            print_debug("winner: " + killer.ToString());
-            return;
-#endif
-
-            if (victim == null || killer == null)
-            {
-                return;
-            }
-
-            foreach (Challenge c in Challenges)
-            {
-                if (c.Stage == Challenge.stages.running)
-                {
-#if DEBUG
-                    Log.Error("EntityKilled called");
-#endif
-
-                    ClientInfo winner_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(victim.belongsPlayerId.ToString());
-                    ClientInfo loser_ci = ConsoleHelper.ParseParamEntityIdToClientInfo(killer.belongsPlayerId.ToString());
-
-                    if (winner_ci == null || loser_ci == null)
-                    {
-                        return;
-                    }
-
-                    /* Option1: if one challenger dies (for any reason), the other one wins */
-                    if (loser_ci.playerId == c.Receiver)
-                    {
-                        c.Handler.Win(c.Handler.req_ci);
-                    }
-                    else if (loser_ci.playerId == c.Requester)
-                    {
-                        c.Handler.Win(c.Handler.rec_ci);
-                    }
-
-                    /* Option 2: challenger must kill other challenger to win (DOES NOT WORK BECAUSE EntityKilled is not called if a player is killed by a zombie!
-                    if ((winner_ci.playerId == c.Receiver || winner_ci.playerId == c.Requester) && (loser_ci.playerId == c.Receiver || loser_ci.playerId == c.Requester ))
-                    {
-                        c.Handler.Win(winner_ci);
-                    }
-                    */
-                }
-            }
-        }
-
-        public static void OnPlayerKilled(string _killedName)
+        //todo: extra points for pvp kill
+        public static void OnPlayerKilled(string _killedName, string _killerName)
         {
             if (string.IsNullOrEmpty(_killedName))
             {
@@ -223,21 +177,29 @@ namespace MinksMods.ModChallenge
             }
         }
 
-        public static void PlayerDisconnected(ClientInfo _cInfo)
+        public static void OnPlayerLeft(string _playername)
         {
-            if (_cInfo == null)
+            if (string.IsNullOrEmpty(_playername))
             {
                 return;
             }
 
             foreach (Challenge c in Challenges)
             {
-                if (c.Receiver == _cInfo.playerId || c.Receiver == _cInfo.playerId)
+                if (c.Stage == Challenge.stages.running)
                 {
-                    c.DisconnectFromRunningChallenge(_cInfo);
-                    return;
+                    if (c.Handler.req_ci.playerName == _playername || c.Handler.rec_ci.playerName == _playername)
+                    {
+                        c.DisconnectFromRunningChallenge(_playername);
+                        return;
+                    }
                 }
             }
+        }
+
+        public static void PlayerDisconnected(ClientInfo _cInfo)
+        {
+ 
         }
 
         public enum SoundEvents
@@ -388,18 +350,18 @@ namespace MinksMods.ModChallenge
             return false;
         }
 
-        public void DisconnectFromRunningChallenge(ClientInfo _cInfo)
+        public void DisconnectFromRunningChallenge(string _playername)
         {
-            if (_cInfo == null)
+            if (string.IsNullOrEmpty(_playername))
             {
                 return;
             }
 
-            if (_cInfo.playerId == receiver)
+            if (_playername == handler.rec_ci.playerName)
             {
                 handler.Win(handler.req_ci);
             }
-            else
+            else if (_playername == handler.req_ci.playerName)
             {
                 handler.Win(handler.rec_ci);
             }
@@ -557,14 +519,13 @@ namespace MinksMods.ModChallenge
             }
 
             req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_req, "", false, null));
-
             rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text_rec, "", false, null));
         }
 
         public void ShowStart()
         {
-            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + rec_p.Name + " started![-]", "", false, null));
-            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] Challenge vs " + req_p.Name + " started![-]", "", false, null));
+            req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]Challenge vs " + rec_p.Name + " started![-]", "", false, null));
+            rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]Challenge vs " + req_p.Name + " started![-]", "", false, null));
         }
 
 
@@ -630,7 +591,6 @@ namespace MinksMods.ModChallenge
             otherone.z = 0;
 #endif
 */
-
             if (thisone.z < otherone.z)
             {
                 response = "north";
@@ -642,7 +602,6 @@ namespace MinksMods.ModChallenge
 
             if (thisone.x < otherone.x)
             {
-                
                 response += ((response.Length > 1) ? "-" : "") + "east";
             }
             else if (thisone.x > otherone.x)
@@ -657,8 +616,10 @@ namespace MinksMods.ModChallenge
 
         public void clean()
         {
-            timer.Dispose();
+            if (timer != null)
+            {
+                timer.Dispose();
+            }
         }
     }
 }
-

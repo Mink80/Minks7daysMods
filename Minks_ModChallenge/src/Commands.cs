@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define RELEASE
+
+using System;
 using System.Collections.Generic;
 using AllocsFixes.PersistentData;
 
@@ -49,7 +51,6 @@ namespace MinksMods.ModChallenge
 
                 // Dict< playerID, playerName >
                 Dictionary<string, string> bussy_players = new Dictionary<string, string>();
-                ClientInfo receiver = null;
 
                 // use a copy of the list (ToArray()) to be able to modify the original (delete timed out requests)
                 foreach (Challenge c in ModChallenge.Challenges.ToArray())
@@ -71,6 +72,7 @@ namespace MinksMods.ModChallenge
                         }
                     }
 
+                    // build a list/dict of bussy players
                     if (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted)
                     {
                         if (!bussy_players.ContainsKey(c.Receiver))
@@ -94,203 +96,20 @@ namespace MinksMods.ModChallenge
                     // no parameter - show requested/running challenges
                     case 0:
 
-                        bool found_one = false;
-
-                        // every player can see the table of requests and running challenges. thats why we use the original ModChallenge.Challenges List and not the copyed one (players_challenges)
-                        foreach (Challenge c in ModChallenge.Challenges)
-                        {
-                            if (c.Handler == null || c.Handler.rec_ci == null || c.Handler.req_ci == null)
-                            {
-                                continue;
-                            }
-
-                            if (c.Stage == Challenge.stages.requested)
-                            {
-                                SdtdConsole.Instance.Output("Open challenge request: " + c.Handler.req_ci.playerName + " challenged " + c.Handler.rec_ci.playerName + " at " + c.Time.ToString() + ".");
-                                found_one = true;
-                            }
-                            else if (c.Stage == Challenge.stages.running)
-                            {
-                                SdtdConsole.Instance.Output("Running challenge: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ". Started at " + c.Time.ToString() + ".");
-                                found_one = true;
-                            }
-                            else if (c.Stage == Challenge.stages.accepted)
-                            {
-                                found_one = true;
-                                if (c.Receiver == playerID || c.Requester == playerID)
-                                {
-                                    SdtdConsole.Instance.Output("Your challenge vs " + ((playerID == c.Receiver) ? c.Handler.req_ci.playerName : c.Handler.rec_ci.playerName) + " will start soon.");
-                                }
-                                else
-                                {
-                                    SdtdConsole.Instance.Output("Challenge will start soon: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName);
-                                }
-
-                            }
-                        }
-
-                        if (!found_one)
-                        {
-                            SdtdConsole.Instance.Output("No challenges found.");
-                        }
-
+                        ShowChallengesOnConsole(playerID);
                         break;
 
-                    // 1 parameter - [ <name> | "giveup" ]
+                    // 1 parameter - [ <PlayerNameToInvite> | "giveup" ]
                     case 1:
 
-                        if (_params[0].ToLower() == senderinfo.RemoteClientInfo.playerName.ToLower())
-                        {
-#if DEBUG
-                            SdtdConsole.Instance.Output("Debug mode. You can challenge yourself.");
-#else
-                            SdtdConsole.Instance.Output("You can not challenge yourself.");
-                            return;
-#endif
-                        }
-
-                        foreach (Challenge c in players_challenges)
-                        {
-                            // giveup
-                            if (_params[0] == "giveup" && (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted))
-                            {
-                                if (playerID == c.Receiver)
-                                {
-                                    SdtdConsole.Instance.Output("You gave up.");
-                                    c.Handler.Win(c.Handler.req_ci);
-                                    return;
-                                }
-                                else if (playerID == c.Requester)
-                                {
-                                    SdtdConsole.Instance.Output("You gave up.");
-                                    c.Handler.Win(c.Handler.rec_ci);
-                                    return;
-                                }
-                            }
-
-                            // lets use this iteration to also check if there is already an invite for that player
-                            if (c.Stage == Challenge.stages.requested)
-                            {
-                                if (c.Handler.rec_ci.playerName.ToLower() == _params[0].ToLower())
-                                {
-                                    SdtdConsole.Instance.Output("You already invited " + _params[0] + " for a challenge.");
-                                    return;
-                                }
-                                else if (c.Handler.req_ci.playerName.ToLower() == _params[0].ToLower())
-                                {
-                                    SdtdConsole.Instance.Output("No need. You have an active invitation from " + _params[0] + ". Just accept it.");
-                                    return;
-                                }
-                            }
-                        }
-
-                        // no challenge invite while in a running or accepted challenge
-                        if (bussy_players.ContainsKey(playerID))
-                        {
-                            SdtdConsole.Instance.Output("You can not challenge someone while in an accepted or running challenge.");
-                            return;
-                        }
-
-                        // invite vor challenge: search name from user input, validate and create a new challenge (+send out challenge request)
-                        receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
-                        if (receiver != null)
-                        {
-                            // check if challenge receiver is already in an accepted or running challenge
-                            if (bussy_players.ContainsKey(receiver.playerId))
-                            {
-                                SdtdConsole.Instance.Output(_params[0] + " is in a running or shortly starting challenge and can not be challenged again until the current challenge is over.");
-                                return;
-                            }
-
-                            Challenge c = new Challenge(playerID, receiver.playerId, ++ModChallenge.counter);
-                            ModChallenge.AddChallenge(c);
-                            SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
-
-                            senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You challenged " + receiver.playerName + ".[-]", "", false, null));
-                            receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You were challenged by " + senderinfo.RemoteClientInfo.playerName + ".[-]", "", false, null));
-
-                            c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.invite);
-                            c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.invite);
-                        }
-                        else
-                        {
-                            SdtdConsole.Instance.Output("No such player.");
-                        }
-
+                        Invite_and_GiveUp_Handler(playerID, senderinfo.RemoteClientInfo.playerName, _params, bussy_players, players_challenges);
                         break;
 
-                    // 2 parameter: <player> [ accept | cancel | revoke | withdraw ]
+                    // 2 parameter: <PlayerName> [ accept | cancel | revoke | withdraw ]
                     case 2:
 
-                        // none of the 2 parameter option is allowed to be executed while in a running challenge.
-                        if (bussy_players.ContainsKey(playerID))
-                        {
-                            SdtdConsole.Instance.Output("You can not do that while in a running or accepted challenge.");
-                            return;
-                        }
-
-                        // check first parameter for valid player name
-                        receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
-                        if (receiver == null)
-                        {
-                            SdtdConsole.Instance.Output("No such user: " + _params[0]);
-                            return;
-                        }
-
-                        // check second parameter for valid options
-                        if (_params[1] == "accept" || _params[1] == "cancel" || _params[1] == "revoke" || _params[1] == "withdraw" || _params[1] == "deny")
-                        { 
-                            foreach (Challenge c in players_challenges)
-                            {
-                                // accept
-                                if (c.Stage == Challenge.stages.requested)
-                                {
-                                    if (c.Receiver == playerID && _params[1] == "accept")
-                                    {
-                                        c.Accept();
-                                        SdtdConsole.Instance.Output("You accepted the challenge.");
-                                        senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge![-]", "", false, null));
-                                        receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " accepted your challenge![-]", "", false, null));
-                                        c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.accepted);
-#if !DEBUG
-                                        c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.accepted);
-#endif
-                                        return;
-
-                                    }
-                                    // todo: invalid cancel message
-                                    else if (_params[1] == "cancel" || _params[1] == "revoke" || _params[1] == "withdraw" || _params[1] == "deny")
-                                    {
-                                        if (c.Requester == playerID)
-                                        {
-                                            SdtdConsole.Instance.Output("You have withdrawn the challenge invite.");
-                                            senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You withdrawn the challenge invite.[-]", "", false, null));
-                                            receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " has withdrawn the challenge invite![-]", "", false, null));
-                                        }
-                                        else if (c.Receiver == playerID)
-                                        {
-                                            receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You denied the challenge invite.[-]", "", false, null));
-                                            senderinfo.RemoteClientInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + senderinfo.RemoteClientInfo.playerName + " has denied the challenge invite![-]", "", false, null));
-                                        }
-
-                                        c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.revoked);
-#if !DEBUG
-                                        c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.revoked);
-#endif
-                                        ModChallenge.DelChallenge(c);
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            SdtdConsole.Instance.Output("Valid second paramerers are: accept, cancel (and the following aliases for canel as well: revoke, withdraw, deny). \n" + GetHelp());
-                            return;
-                        }
-
+                        Accept_and_deny_Handler(playerID, _params, players_challenges, bussy_players);
                         break;
-
 
                     default:
                         SdtdConsole.Instance.Output(GetHelp());
@@ -301,6 +120,207 @@ namespace MinksMods.ModChallenge
             {
                 SdtdConsole.Instance.Output("Something wicked happened. Check logs.");
                 Log.Exception(Ex);
+            }
+        }
+
+
+        private void Accept_and_deny_Handler(string playerID, List<string> _params, List<Challenge> players_challenges, Dictionary<string, string> bussy_players)
+        {
+            //todo bug: accept a challenge while the opponent is busy check
+
+            // none of the 2 parameter option is allowed to be executed while in a running challenge.
+            if (bussy_players.ContainsKey(playerID))
+            {
+                SdtdConsole.Instance.Output("You can not do that while in a running or accepted challenge.");
+                return;
+            }
+
+            // check first parameter for valid player name
+            ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
+            if (receiver == null)
+            {
+                SdtdConsole.Instance.Output("No such user: " + _params[0]);
+                return;
+            }
+
+            // check second parameter for valid options
+            if (_params[1] == "accept" || _params[1] == "cancel" || _params[1] == "revoke" || _params[1] == "withdraw" || _params[1] == "deny")
+            {
+                foreach (Challenge c in players_challenges)
+                {
+                    // accept
+                    if (c.Stage == Challenge.stages.requested)
+                    {
+                        if (c.Receiver == playerID && _params[1] == "accept")
+                        {
+                            c.Accept();
+                            SdtdConsole.Instance.Output("You accepted the challenge.");
+                            c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge vs "+ c.Handler.req_ci.playerName + "![-]", "", false, null));
+                            c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName + " accepted your challenge![-]", "", false, null));
+                            c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.accepted);
+#if !DEBUG
+                            c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.accepted);
+#endif
+                            return;
+
+                        }
+                        // todo: invalid cancel message
+                        else if (_params[1] == "cancel" || _params[1] == "revoke" || _params[1] == "withdraw" || _params[1] == "deny")
+                        {
+                            if (c.Requester == playerID)
+                            {
+                                SdtdConsole.Instance.Output("You have withdrawn the challenge invite.");
+                                c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You withdrawn the challenge invite.[-]", "", false, null));
+                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.req_ci.playerName + " has withdrawn the challenge invite![-]", "", false, null));
+                            }
+                            else if (c.Receiver == playerID)
+                            {
+                                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You denied the challenge invite.[-]", "", false, null));
+                                c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName + " has denied the challenge invite![-]", "", false, null));
+                            }
+
+                            c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.revoked);
+#if !DEBUG
+                            c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.revoked);
+#endif
+                            ModChallenge.DelChallenge(c);
+                            return;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SdtdConsole.Instance.Output("Valid second paramerers are: accept, cancel (and the following aliases for canel as well: revoke, withdraw, deny). \n" + GetHelp());
+                return;
+            }
+        }
+
+
+        private void Invite_and_GiveUp_Handler(string IssuerID, string IssuerName, List<string> _params, Dictionary<string, string> bussy_players, List<Challenge> players_challenges)
+        {
+            if (_params[0].ToLower() == IssuerName.ToLower())
+            {
+#if DEBUG
+                SdtdConsole.Instance.Output("Debug mode. You can challenge yourself.");
+#else
+                            SdtdConsole.Instance.Output("You can not challenge yourself.");
+                            return;
+#endif
+            }
+
+            foreach (Challenge c in players_challenges)
+            {
+                // giveup
+                if (_params[0] == "giveup" && (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted))
+                {
+                    if (IssuerID == c.Receiver)
+                    {
+                        SdtdConsole.Instance.Output("You gave up.");
+                        c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName +" gave up.[-]", "", false, null));
+                        c.Handler.Win(c.Handler.req_ci);
+                        return;
+                    }
+                    else if (IssuerID == c.Requester)
+                    {
+                        SdtdConsole.Instance.Output("You gave up.");
+                        c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.req_ci.playerName + " gave up.[-]", "", false, null));
+                        c.Handler.Win(c.Handler.rec_ci);
+                        return;
+                    }
+                }
+
+                // lets use this iteration to also check if there is already an invite for that player
+                if (c.Stage == Challenge.stages.requested)
+                {
+                    if (c.Handler.rec_ci.playerName.ToLower() == _params[0].ToLower())
+                    {
+                        SdtdConsole.Instance.Output("You already invited " + _params[0] + " for a challenge.");
+                        return;
+                    }
+                    else if (c.Handler.req_ci.playerName.ToLower() == _params[0].ToLower())
+                    {
+                        SdtdConsole.Instance.Output("No need. You have an active invitation from " + _params[0] + ". Just accept it.");
+                        return;
+                    }
+                }
+            }
+
+            // no challenge invite while in a running or accepted challenge
+            if (bussy_players.ContainsKey(IssuerID))
+            {
+                SdtdConsole.Instance.Output("You can not challenge someone while in an accepted or running challenge.");
+                return ;
+            }
+
+            // invite vor challenge: search name from user input, validate and create a new challenge (+send out challenge request)
+            ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
+            if (receiver != null)
+            {
+                // check if challenge receiver is already in an accepted or running challenge
+                if (bussy_players.ContainsKey(receiver.playerId))
+                {
+                    SdtdConsole.Instance.Output(_params[0] + " is in a running or shortly starting challenge and can not be challenged again until the current challenge is over.");
+                    return;
+                }
+
+                Challenge c = new Challenge(IssuerID, receiver.playerId, ++ModChallenge.counter);
+                ModChallenge.AddChallenge(c);
+                SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
+
+                c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You challenged " + receiver.playerName + ".[-]", "", false, null));
+                receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You were challenged by " + c.Handler.req_ci.playerName + ".[-]", "", false, null));
+
+                c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.invite);
+                c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.invite);
+            }
+            else
+            {
+                SdtdConsole.Instance.Output("No such player.");
+            }
+        }
+
+
+        public void ShowChallengesOnConsole(string playerID)
+        {
+            bool found_one = false;
+
+            // every player can see the table of requests and running challenges. thats why we use the original ModChallenge.Challenges List and not the copyed one (players_challenges)
+            foreach (Challenge c in ModChallenge.Challenges)
+            {
+                if (c.Handler == null || c.Handler.rec_ci == null || c.Handler.req_ci == null)
+                {
+                    continue;
+                }
+
+                if (c.Stage == Challenge.stages.requested)
+                {
+                    SdtdConsole.Instance.Output("Open challenge request: " + c.Handler.req_ci.playerName + " challenged " + c.Handler.rec_ci.playerName + " at " + c.Time.ToString() + ".");
+                    found_one = true;
+                }
+                else if (c.Stage == Challenge.stages.running)
+                {
+                    SdtdConsole.Instance.Output("Running challenge: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ". Started at " + c.Time.ToString() + ".");
+                    found_one = true;
+                }
+                else if (c.Stage == Challenge.stages.accepted)
+                {
+                    found_one = true;
+                    if (c.Receiver == playerID || c.Requester == playerID)
+                    {
+                        SdtdConsole.Instance.Output("Your challenge vs " + ((playerID == c.Receiver) ? c.Handler.req_ci.playerName : c.Handler.rec_ci.playerName) + " will start soon.");
+                    }
+                    else
+                    {
+                        SdtdConsole.Instance.Output("Challenge will start soon: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName);
+                    }
+
+                }
+            }
+
+            if (!found_one)
+            {
+                SdtdConsole.Instance.Output("No challenges found.");
             }
         }
     }

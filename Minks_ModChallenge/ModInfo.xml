@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+  <ModInfo>
+    <Name value="Minks ModChallenge" />
+    <Description value="A pvp mod for 7 days to die" />
+    <Author value="Kai Sassmannshausen" />
+    <Version value="0.9" />
+    <Website value="https://github.com/Mink80/Minks7daysMods" />
+  </ModInfo>
+</xml>

@@ -41,51 +41,60 @@ namespace MinksMods.ModChallenge
             get { return 1000; }
         }
 
+        public void ChallengeInfos(string playerID, out List<Challenge>players_challenges, out Dictionary<string, string>bussy_players)
+        {
+            players_challenges = new List<Challenge>();
+            bussy_players = new Dictionary<string, string>();
+
+            // use a copy of the list (ToArray()) to be able to modify the original (delete timed out requests)
+            foreach (Challenge c in ModChallenge.Challenges.ToArray())
+            {
+                // clear out timedout requests
+                if (c == null || (c.IsTimedOut() && c.Stage == Challenge.stages.requested))
+                {
+                    ModChallenge.DelChallenge(c);
+                    continue;
+                }
+
+                // build new List with only current challenges where command issuer is part of
+                if ((c.Receiver == playerID || c.Requester == playerID) && c.Stage != Challenge.stages.over)
+                {
+                    // do not include timed out requests
+                    if (!(c.IsTimedOut() && c.Stage == Challenge.stages.requested))
+                    {
+                        players_challenges.Add(c);
+                    }
+                }
+
+                // build a list/dict of bussy players
+                if (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted)
+                {
+                    if (!bussy_players.ContainsKey(c.Receiver))
+                    {
+                        bussy_players.Add(c.Receiver, c.Handler.rec_ci.playerName);
+                    }
+
+                    if (!bussy_players.ContainsKey(c.Requester))
+                    {
+                        bussy_players.Add(c.Requester, c.Handler.req_ci.playerName);
+                    }
+                }
+            }
+        }
+
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
             try
             {
                 CommandSenderInfo senderinfo = _senderInfo;
                 string playerID = senderinfo.RemoteClientInfo.playerId;
-                List<Challenge> players_challenges = new List<Challenge>();
 
-                // Dict< playerID, playerName >
-                Dictionary<string, string> bussy_players = new Dictionary<string, string>();
+                // all active challenges the player is involved
+                List<Challenge> players_challenges;
+                // All players with running or accepted challenge: Dict< playerID, playerName >
+                Dictionary<string, string> bussy_players;
 
-                // use a copy of the list (ToArray()) to be able to modify the original (delete timed out requests)
-                foreach (Challenge c in ModChallenge.Challenges.ToArray())
-                {
-                    // clear out timedout requests
-                    if (c == null || (c.IsTimedOut() && c.Stage == Challenge.stages.requested))
-                    {
-                        ModChallenge.DelChallenge(c);
-                        continue;
-                    }
-
-                    // build new List with only current challenges where command issuer is part of
-                    if ((c.Receiver == playerID || c.Requester == playerID) && c.Stage != Challenge.stages.over)
-                    {
-                        // do not include timed out requests
-                        if (!(c.IsTimedOut() && c.Stage == Challenge.stages.requested))
-                        {
-                            players_challenges.Add(c);
-                        }
-                    }
-
-                    // build a list/dict of bussy players
-                    if (c.Stage == Challenge.stages.running || c.Stage == Challenge.stages.accepted)
-                    {
-                        if (!bussy_players.ContainsKey(c.Receiver))
-                        {
-                            bussy_players.Add(c.Receiver, c.Handler.rec_ci.playerName);
-                        }
-
-                        if (!bussy_players.ContainsKey(c.Requester))
-                        {
-                            bussy_players.Add(c.Requester, c.Handler.req_ci.playerName);
-                        }
-                    }
-                }
+                ChallengeInfos(playerID, out players_challenges, out bussy_players);
 
 #if DEBUG
                 Log.Out("ModChallengeDebug: players_challenges.Count: " + players_challenges.Count);
@@ -124,14 +133,17 @@ namespace MinksMods.ModChallenge
         }
 
 
-        private void Accept_and_deny_Handler(string playerID, List<string> _params, List<Challenge> players_challenges, Dictionary<string, string> bussy_players)
+        public void Accept_and_deny_Handler(string playerID, List<string> _params, List<Challenge> players_challenges, Dictionary<string, string> bussy_players)
         {
             //todo bug: accept a challenge while the opponent is busy check
 
             // none of the 2 parameter option is allowed to be executed while in a running challenge.
             if (bussy_players.ContainsKey(playerID))
             {
-                SdtdConsole.Instance.Output("You can not do that while in a running or accepted challenge.");
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("You can not do that while in a running or accepted challenge.");
+                }
                 return;
             }
 
@@ -139,7 +151,10 @@ namespace MinksMods.ModChallenge
             ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
             if (receiver == null)
             {
-                SdtdConsole.Instance.Output("No such user: " + _params[0]);
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("No such user: " + _params[0]);
+                }
                 return;
             }
 
@@ -154,7 +169,10 @@ namespace MinksMods.ModChallenge
                         if (c.Receiver == playerID && _params[1] == "accept")
                         {
                             c.Accept();
-                            SdtdConsole.Instance.Output("You accepted the challenge.");
+                            if (SdtdConsole.Instance != null)
+                            {
+                                SdtdConsole.Instance.Output("You accepted the challenge.");
+                            }
                             c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge vs "+ c.Handler.req_ci.playerName + "![-]", "", false, null));
                             c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName + " accepted your challenge![-]", "", false, null));
                             c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.accepted);
@@ -169,7 +187,10 @@ namespace MinksMods.ModChallenge
                         {
                             if (c.Requester == playerID)
                             {
-                                SdtdConsole.Instance.Output("You have withdrawn the challenge invite.");
+                                if (SdtdConsole.Instance != null)
+                                {
+                                    SdtdConsole.Instance.Output("You have withdrawn the challenge invite.");
+                                }
                                 c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You withdrawn the challenge invite.[-]", "", false, null));
                                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.req_ci.playerName + " has withdrawn the challenge invite![-]", "", false, null));
                             }
@@ -191,21 +212,30 @@ namespace MinksMods.ModChallenge
             }
             else
             {
-                SdtdConsole.Instance.Output("Valid second paramerers are: accept, cancel (and the following aliases for canel as well: revoke, withdraw, deny). \n" + GetHelp());
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("Valid second paramerers are: accept, cancel (and the following aliases for canel as well: revoke, withdraw, deny). \n" + GetHelp());
+                }
                 return;
             }
         }
 
 
-        private void Invite_and_GiveUp_Handler(string IssuerID, string IssuerName, List<string> _params, Dictionary<string, string> bussy_players, List<Challenge> players_challenges)
+        public void Invite_and_GiveUp_Handler(string IssuerID, string IssuerName, List<string> _params, Dictionary<string, string> bussy_players, List<Challenge> players_challenges)
         {
             if (_params[0].ToLower() == IssuerName.ToLower())
             {
 #if DEBUG
-                SdtdConsole.Instance.Output("Debug mode. You can challenge yourself.");
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("Debug mode. You can challenge yourself.");
+                }
 #else
-                            SdtdConsole.Instance.Output("You can not challenge yourself.");
-                            return;
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("You can not challenge yourself.");
+                }
+                return;
 #endif
             }
 
@@ -216,14 +246,20 @@ namespace MinksMods.ModChallenge
                 {
                     if (IssuerID == c.Receiver)
                     {
-                        SdtdConsole.Instance.Output("You gave up.");
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("You gave up.");
+                        }
                         c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName +" gave up.[-]", "", false, null));
                         c.Handler.Win(c.Handler.req_ci);
                         return;
                     }
                     else if (IssuerID == c.Requester)
                     {
-                        SdtdConsole.Instance.Output("You gave up.");
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("You gave up.");
+                        }
                         c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.req_ci.playerName + " gave up.[-]", "", false, null));
                         c.Handler.Win(c.Handler.rec_ci);
                         return;
@@ -235,12 +271,18 @@ namespace MinksMods.ModChallenge
                 {
                     if (c.Handler.rec_ci.playerName.ToLower() == _params[0].ToLower())
                     {
-                        SdtdConsole.Instance.Output("You already invited " + _params[0] + " for a challenge.");
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("You already invited " + _params[0] + " for a challenge.");
+                        }
                         return;
                     }
                     else if (c.Handler.req_ci.playerName.ToLower() == _params[0].ToLower())
                     {
-                        SdtdConsole.Instance.Output("No need. You have an active invitation from " + _params[0] + ". Just accept it.");
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("No need. You have an active invitation from " + _params[0] + ". Just accept it.");
+                        }
                         return;
                     }
                 }
@@ -249,24 +291,35 @@ namespace MinksMods.ModChallenge
             // no challenge invite while in a running or accepted challenge
             if (bussy_players.ContainsKey(IssuerID))
             {
-                SdtdConsole.Instance.Output("You can not challenge someone while in an accepted or running challenge.");
-                return ;
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("You can not challenge someone while in an accepted or running challenge.");
+                }
+                return;
             }
 
             // invite vor challenge: search name from user input, validate and create a new challenge (+send out challenge request)
             ClientInfo receiver = ConsoleHelper.ParseParamPlayerName(_params[0], true, true);
             if (receiver != null)
             {
+                Log.Out(receiver.ToString());
+
                 // check if challenge receiver is already in an accepted or running challenge
                 if (bussy_players.ContainsKey(receiver.playerId))
                 {
-                    SdtdConsole.Instance.Output(_params[0] + " is in a running or shortly starting challenge and can not be challenged again until the current challenge is over.");
+                    if (SdtdConsole.Instance != null)
+                    {
+                        SdtdConsole.Instance.Output(_params[0] + " is in a running or shortly starting challenge and can not be challenged again until the current challenge is over.");
+                    }
                     return;
                 }
 
                 Challenge c = new Challenge(IssuerID, receiver.playerId, ++ModChallenge.counter);
                 ModChallenge.AddChallenge(c);
-                SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("You challanged " + receiver.playerName + ".");
+                }
 
                 c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You challenged " + receiver.playerName + ".[-]", "", false, null));
                 receiver.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You were challenged by " + c.Handler.req_ci.playerName + ".[-]", "", false, null));
@@ -276,7 +329,10 @@ namespace MinksMods.ModChallenge
             }
             else
             {
-                SdtdConsole.Instance.Output("No such player.");
+                if (SdtdConsole.Instance != null)
+                {
+                    SdtdConsole.Instance.Output("No such player.");
+                }
             }
         }
 
@@ -325,6 +381,53 @@ namespace MinksMods.ModChallenge
         }
     }
 
+    public class ChatCommand
+    {
+        // all active challenges the player is involved
+        List<Challenge> players_challenges;
+        // All players with running or accepted challenge: Dict< playerID, playerName >
+        Dictionary<string, string> bussy_players;
+
+        public ChatCommand(string chatmsg, ClientInfo Issuer)
+        {
+            if (Issuer == null || string.IsNullOrEmpty(chatmsg))
+            {
+                return;
+            }
+
+            String[] Command = chatmsg.Split(' ');
+
+            // just 3 parameters allowed
+            if (Command.Length > 3)
+            {
+                return;
+            }
+
+            for (int i=1; i < Command.Length; i++)
+            {
+                // 2 parameter: invite or giveup
+                if (i == 1 && Command.Length == 2)
+                {
+                    new ChallengeCmd().Invite_and_GiveUp_Handler(Issuer.playerId, Issuer.playerName,GetParameter(Issuer.playerId, Command), bussy_players, players_challenges);
+                }
+
+                // 3 parameter: accept or deny
+                else if (i == 2 && Command.Length == 3)
+                {
+                    new ChallengeCmd().Accept_and_deny_Handler(Issuer.playerId, GetParameter(Issuer.playerId, Command), players_challenges, bussy_players);
+                }
+            }
+        }
+
+        public List<string> GetParameter(string _IssuerID, string[] _command)
+        {
+            new ChallengeCmd().ChallengeInfos(_IssuerID, out players_challenges, out bussy_players);
+            List<string> Cmd = new List<string>(_command);
+            Cmd.Remove("/c");
+            Cmd.Remove("/challenge");
+            return Cmd;
+        }
+    }
 
     public class ListAllChallenges : ConsoleCmdAbstract
     {

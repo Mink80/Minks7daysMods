@@ -10,12 +10,13 @@ namespace MinksMods.ModChallenge
 
         public void InitMod()
         {
-            ModEvents.EntityKilled.RegisterHandler(EntityKilled);
+            //ModEvents.EntityKilled.RegisterHandler(EntityKilled);
             ModEvents.GameMessage.RegisterHandler(GameMessage);
             ModEvents.ChatMessage.RegisterHandler(ChatMessage);
             ModEvents.PlayerDisconnected.RegisterHandler(PlayerDisconnected);
             ModChallenge.init();
         }
+
 
         private bool GameMessage(ClientInfo _ci, EnumGameMessages _type, string _string1, string _playerName, bool _bool1, string _killerName, bool _bool2)
         {
@@ -41,6 +42,7 @@ namespace MinksMods.ModChallenge
 
             return true;
         }
+
 
         // sadly will not be called if player kills player
         public void EntityKilled(Entity a, Entity b)
@@ -71,9 +73,11 @@ namespace MinksMods.ModChallenge
             }
             catch (Exception e)
             {
-                Log.Out("Error in ModChallange.PlayerDisconnected: " + e);
+                Log.Error("ModChallange. PlayerDisconnected crashed. See Logs.");
+                Log.Exception(e);
             }
         }
+
 
         public bool isPlayer(Entity e)
         {
@@ -85,6 +89,7 @@ namespace MinksMods.ModChallenge
             return false;
         }
 
+
         public bool ChatMessage(ClientInfo _cInfo, EChatType _type, int _senderId, string _msg, string _mainName, bool _localizeMain, List<int> _recipientEntityIds)
         {
             if (string.IsNullOrEmpty(_msg))
@@ -92,26 +97,28 @@ namespace MinksMods.ModChallenge
                 return true;
             }
 
-            if (_msg.EqualsCaseInsensitive("/mink") || _msg.EqualsCaseInsensitive("/c"))
+            if (_cInfo != null)
             {
-                if (_cInfo != null)
+                if (_msg.EqualsCaseInsensitive("/c") || _msg.EqualsCaseInsensitive("/challenge"))
                 {
-                    Log.Out("Sent chat hook reply to {0}", _cInfo.playerId);
-                    _cInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "Thats the author of ModChallenge!", "", false, null));
+                    _cInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "Please open the console with F1 and use the command \"Challenge\" to get a list of Challenges or \"help c\" for help.", "", false, null));
+                    return false;
                 }
-                else
+
+                else if (_msg.StartsWith("/c") || _msg.StartsWith("/Challenge"))
                 {
-                    Log.Error("ChatHookExample: Argument _cInfo null on message: {0}", _msg);
+                    new ChatCommand(_msg, _cInfo);
+                    return false;
                 }
+
+                Log.Out("Sent chat hook reply to {0}", _cInfo.playerId);
             }
-            else if (_msg.Contains("Minkio") )
+            else
             {
-                Log.Out("_mainName: " + _mainName.ToString());
-                Log.Out("_localizeMain: " + _localizeMain.ToString());
-                Log.Out("_msg: " + _msg );
+                Log.Error("ChatHookExample: Argument _cInfo null on message: {0}", _msg);
             }
 
-            return false;
+            return true;
         }
     }
 

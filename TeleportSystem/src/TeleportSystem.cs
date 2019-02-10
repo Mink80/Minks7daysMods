@@ -66,7 +66,14 @@ namespace MinksMods.MinksTeleportSystem
             }
             else
             {
-                WriteSettingsFile(configfile);
+                if (Directory.Exists(filepath))
+                {
+                    WriteSettingsFile(configfile);
+                }
+                else
+                {
+                    Log.Warning("TeleportSystem: GamePath does not exist. TeleportSystemConfig.xml cound not be written. This is normal for the first start of a new game.");
+                }
             }
 
             // xml load failed, restoring defaults

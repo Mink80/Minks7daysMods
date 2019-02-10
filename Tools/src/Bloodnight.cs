@@ -25,7 +25,7 @@ namespace MinksMods.Tools
 
         public override int DefaultPermissionLevel
         {
-            get { return 1000; }
+            get { return 0; }
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
@@ -35,9 +35,12 @@ namespace MinksMods.Tools
                 ClientInfo ci = _senderInfo.RemoteClientInfo;
                 if (ci != null)
                 {
-                    //todo
-                    string msg = "test";
-                    ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, msg, "Server", false, null));
+                    //todo: implement
+                    // HOT TO GET THE FUCKING GAME TIME ?!?
+                    if (SdtdConsole.Instance != null)
+                    {
+                        SdtdConsole.Instance.Output("Not implemented yet.");
+                    }
                 }
             }
             catch (Exception Ex)

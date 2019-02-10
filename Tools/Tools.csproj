@@ -41,6 +41,9 @@
       <HintPath>7dtd-binaries\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>7dtd-binaries\UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>7dtd-binaries\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
@@ -50,6 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API.cs" />
+    <Compile Include="src\Bloodnight.cs" />
+    <Compile Include="src\CodeContainer.cs" />
+    <Compile Include="src\PlaySound.cs" />
     <Compile Include="src\Servertime.cs" />
   </ItemGroup>
   <ItemGroup>

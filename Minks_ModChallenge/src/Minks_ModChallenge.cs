@@ -98,7 +98,14 @@ namespace MinksMods.ModChallenge
             }
             else
             {
-                WriteSettingsFile(configfile);
+                if (Directory.Exists(filepath))
+                {
+                    WriteSettingsFile(configfile);
+                }
+                else
+                {
+                    Log.Warning("ModChallenge: GamePath does not exist. Minks_ModChallenge.xml cound not be written. This is normal for the first start of a new game.");
+                }
             }
 
             // xml load failed, restoring defaults

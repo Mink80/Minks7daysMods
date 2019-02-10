@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinksTeleportSystem", "TeleportSystem\MinksTeleportSystem.csproj", "{768161ED-290C-4081-A6A4-E6C111F39CA3}"
 EndProject
@@ -34,12 +34,15 @@ Global
 		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD2F1F85-2174-41DD-90AD-1F41A95A5749}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BA306ED-997B-46F0-A82C-05A2D4E03A39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D4CAE5E9-FC89-4A00-9E44-1BF9A8E76FDA}
 	EndGlobalSection
 EndGlobal

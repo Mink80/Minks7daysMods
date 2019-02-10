@@ -27,7 +27,7 @@
     * add multiple invites
     * check if player kills player (other event)
 */
-#define DEBUG
+#define RELEASE
 
 using System;
 using System.Collections.Generic;
@@ -40,6 +40,7 @@ using AllocsFixes.PersistentData;
 
 namespace MinksMods.ModChallenge
 {
+
     public delegate void TimerCallback(object state);
 
     public static class ModChallenge
@@ -151,7 +152,7 @@ namespace MinksMods.ModChallenge
             }
         }
 
-        //todo: extra points for pvp kill
+        // todo: extra points for pvp kill
         public static void OnPlayerKilled(string _killedName, string _killerName)
         {
             if (string.IsNullOrEmpty(_killedName))
@@ -220,12 +221,12 @@ namespace MinksMods.ModChallenge
             {
                 { SoundEvents.invite    , "quest_note_offer" },
                 { SoundEvents.accepted  , "quest_subtask_complete" },
-                { SoundEvents.revoked   , "quest_note_decline" }, // password_fail, recipe_unlocked, SlowSwoosh, wellness_increase
+                { SoundEvents.revoked   , "quest_note_decline" },
                 { SoundEvents.start     , "quest_started" },
                 { SoundEvents.won       , "quest_master_complete" },
                 { SoundEvents.lost      , "quest_failed" },
                 { SoundEvents.draw      , "quest_failed" },
-                { SoundEvents.info      , "recipe_unlocked" },
+                { SoundEvents.info      , "buttonclick" },
                 { SoundEvents.gunshot   , "44magnum_fire" }
             };
 
@@ -469,6 +470,7 @@ namespace MinksMods.ModChallenge
                 return;
             }
 
+            //todo: check sound options (range etc)
             _ci.SendPackage(new NetPackageSoundAtPosition(rec_p.LastPosition.ToVector3(), ModChallenge.Sounds[_se] , UnityEngine.AudioRolloffMode.Linear, 10, rec_ci.entityId));
         }
 
@@ -541,8 +543,8 @@ namespace MinksMods.ModChallenge
             // send message to winner/loser
             if (winner.playerId == challenge.Receiver)
             {
-                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + rec_p.Name + "![-]", "", false, null));
-                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + req_p.Name + "![-]", "", false, null));
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You lost the challenge against " + rec_p.Name + "![-]", "", false, null));
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You won the challenge against " + req_p.Name + "![-]", "", false, null));
 
                 SendSoundPackage(rec_ci, ModChallenge.SoundEvents.won);
                 SendSoundPackage(req_ci, ModChallenge.SoundEvents.lost);
@@ -551,8 +553,8 @@ namespace MinksMods.ModChallenge
             }
             else
             {
-                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You won the challenge against " + rec_p.Name + "![-]", "", false, null));
-                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "] You lost the challenge against " + req_p.Name + "![-]", "", false, null));
+                req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You won the challenge against " + rec_p.Name + "![-]", "", false, null));
+                rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You lost the challenge against " + req_p.Name + "![-]", "", false, null));
 
                 SendSoundPackage(rec_ci, ModChallenge.SoundEvents.lost);
                 SendSoundPackage(req_ci, ModChallenge.SoundEvents.won);

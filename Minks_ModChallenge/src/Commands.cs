@@ -135,8 +135,6 @@ namespace MinksMods.ModChallenge
 
         public void Accept_and_deny_Handler(string playerID, List<string> _params, List<Challenge> players_challenges, Dictionary<string, string> bussy_players)
         {
-            //todo bug: accept a challenge while the opponent is busy check
-
             // none of the 2 parameter option is allowed to be executed while in a running challenge.
             if (bussy_players.ContainsKey(playerID))
             {
@@ -163,11 +161,22 @@ namespace MinksMods.ModChallenge
             {
                 foreach (Challenge c in players_challenges)
                 {
-                    // accept
+                    // accept handling
                     if (c.Stage == Challenge.stages.requested)
                     {
                         if (c.Receiver == playerID && _params[1] == "accept")
                         {
+                            if (bussy_players.ContainsKey(c.Receiver))
+                            {
+                                if (SdtdConsole.Instance != null)
+                                {
+                                    SdtdConsole.Instance.Output(c.Handler.rec_ci.playerName + " is already in a running challenge. Aborted.");
+                                }
+                                c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName + " is already in a running challenge. Aborted.[-]", "", false, null));
+                                return;
+                            }
+
+                            // all checks passed, accept the challenge
                             c.Accept();
                             if (SdtdConsole.Instance != null)
                             {

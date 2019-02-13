@@ -1,8 +1,10 @@
 ﻿# Minks_ModChallenge
 A 7 Days to Die Mod written in C# for the dedicated server of version A17(.x).
 
+
 ## What does it do
 This Mod allows you to challenge another player on a pvp server. The other player gets notified and can accept the challenge. Three minutes later, the challenge starts and both of you get the distance and relative location to each other in a ticker (i.e. "321m north-west") until one of you dies.
+
 
 ## Why?
 I made the experience, that on PvP servers people build their homes somewhere hidden. Most likely underground. Understandable, to be not seen is the best way to not get base raided. But you are still for a reason on a PvP server. And have no option for some quick PvP fun.
@@ -16,8 +18,8 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 
 ## Ingame console commands (F1)
 ### For users
-> Default PermissionLevel 1000
-* Challenge [ <player_name> | giveup]  [ accept | cancel ] 
+> Challenge [ <player_name> | giveup]  [ accept | cancel ] 
+*Default PermissionLevel 1000*
 
 #### Simple Examples:
     You use:  "Challenge Joe"
@@ -33,15 +35,17 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
     "withdraw", "deny", "revoke" are aliases for "cancel".
 
 ### For admins
-> Default PermissionLevel 0
-* ListAllChallenges [settings]  
+> ListAllChallenges [settings]  
+*Default PermissionLevel 0*
 
 Lists all challanges in all states (also ended ones)  
 If the settings parameter been used, the command prints out the current settings loaded from its xml file.
 
-## Chat commands
+
+## Chat commands (t)
 Like the console commands, "/Challenge" and "/c" can be used in the chat window.
 The parameters are the same.
+
 
 ## Installation
 Download the Minks_ModChallenge.zip file and place the unpacked Folder it in the 7 Days to Die Mods Folder of your dedicated server.

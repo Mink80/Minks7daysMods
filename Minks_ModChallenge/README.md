@@ -2,7 +2,7 @@
 A 7 Days to Die Mod written in C# for the dedicated server of version A17(.x).
 
 ## What does it do
-This Mod allows you to challenge another player on a pvp server. The other player gets notified and can accept the challenge. 3 Minutes later, you get the distance and relative location to each other in a ticker (i.e. "321m north-west") until one of you dies.
+This Mod allows you to challenge another player on a pvp server. The other player gets notified and can accept the challenge. Three minutes later, the challenge starts and both of you get the distance and relative location to each other in a ticker (i.e. "321m north-west") until one of you dies.
 
 ## Why?
 I made the experience, that on PvP servers people build their homes somewhere hidden. Most likely underground. Understandable, to be not seen is the best way to not get base raided. But you are still for a reason on a PvP server. And have no option for some quick PvP fun.
@@ -19,18 +19,18 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 > Default PermissionLevel 1000
 * Challenge [ <player_name> | giveup]  [ accept | cancel ] 
 
-#### Simple Examples:\n" +
-You use:  "Challenge Joe"
-Joe uses: "Challenge YourName accept
+#### Simple Examples: +
+    You use:  "Challenge Joe"
+    Joe uses: "Challenge YourName accept
 
-"Challenge" without any parameters shows your current challenge invites.
-To withdraw a challenge invite: "Challenge JoeFarmer cancel" (can only be done before challenge started)
-To deny a challenge request: "Challenge RequesterName cancel"
-To giveup a challenge: "Challenge giveup" (can only be done in a running challange)
-If you want to challenge a user with a space in its name, use "Some Name".
+    "Challenge" without any parameters shows your current challenge invites.
+    To withdraw a challenge invite: "Challenge JoeFarmer cancel" (can only be done before challenge started)
+    To deny a challenge request: "Challenge RequesterName cancel"
+    To giveup a challenge: "Challenge giveup" (can only be done in a running challange)
+    If you want to challenge a user with a space in its name, use "Some Name".
 
-"C" is the short version of "Challanges" and can be used with the same parameters.
-"withdraw", "deny", "revoke" are aliases for "cancel".
+    "C" is the short version of "Challanges" and can be used with the same parameters.
+    "withdraw", "deny", "revoke" are aliases for "cancel".
 
 ### For admins
 > Default PermissionLevel 0

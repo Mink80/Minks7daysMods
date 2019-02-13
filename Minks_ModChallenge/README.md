@@ -19,7 +19,7 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 > Default PermissionLevel 1000
 * Challenge [ <player_name> | giveup]  [ accept | cancel ] 
 
-#### Simple Examples: +
+#### Simple Examples:
     You use:  "Challenge Joe"
     Joe uses: "Challenge YourName accept
 
@@ -34,7 +34,8 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 
 ### For admins
 > Default PermissionLevel 0
-* ListAllChallenges [settings] - Lists all challanges in all states (also ended ones)
+* ListAllChallenges [settings]
+Lists all challanges in all states (also ended ones)  
 If the settings parameter been used, the command prints out the current settings loaded from its xml file.
 
 ## Chat commands

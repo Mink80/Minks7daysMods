@@ -37,7 +37,7 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
     To giveup a challenge: "Challenge giveup" (can only be done in a running challange)
     If you want to challenge a user with a space in its name, use "Some Name".
 
-    "C" is the short version of "Challanges" and can be used with the same parameters.
+    "C" is the short version of "Challenges" and can be used with the same parameters.
     "withdraw", "deny", "revoke" are aliases for "cancel".
 
 ### For admins
@@ -45,7 +45,7 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 
 *Default PermissionLevel 0*
 
-Lists all challanges in all states (also ended ones)  
+Lists all challenges in all states (also ended ones)  
 If the settings parameter been used, the command prints out the current settings loaded from its xml file.
 
 

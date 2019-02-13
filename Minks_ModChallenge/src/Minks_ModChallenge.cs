@@ -429,8 +429,8 @@ namespace MinksMods.ModChallenge
                     if (challenge.IsTimedOut())
                     {
                         ShowDraw();
-                        SendSoundPackage(rec_ci, ModChallenge.SoundEvents.start);
-                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
+                        SendSoundPackage(rec_ci, ModChallenge.SoundEvents.draw);
+                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.draw);
                         challenge.End(Challenge.winoptions.none);
                     }
                     else

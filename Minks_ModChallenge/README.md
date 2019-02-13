@@ -11,6 +11,11 @@ I made the experience, that on PvP servers people build their homes somewhere hi
 ModChallenge closes the gap! Equip yourself, get some distance between you and your base, challange someone! Hunt him down or get killed trying... This Mod will get some decent PvP into your servers!
 
 
+## Server ideas
+You can use this Mod just as an additional feature of your PvP server.  
+Or you can build a server for the dedicated usage of it: let you players start with level 100 and full equiped and everyone can start to challenge others.
+
+
 ## Requirements
 ### To use this mod
 Allocs Allocs_CommonFunc mod (7dtd-server-fixes.dll) is needed. Ether all 3 of allocs Mods or just the "Allocs_CommonFunc" one is fine.

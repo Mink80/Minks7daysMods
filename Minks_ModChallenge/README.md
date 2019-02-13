@@ -18,7 +18,8 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 
 ## Ingame console commands (F1)
 ### For users
-> Challenge [ <player_name> | giveup]  [ accept | cancel ] 
+> Challenge [ <player_name> | giveup]  [ accept | cancel ]  
+
 *Default PermissionLevel 1000*
 
 #### Simple Examples:
@@ -36,6 +37,7 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
 
 ### For admins
 > ListAllChallenges [settings]  
+
 *Default PermissionLevel 0*
 
 Lists all challanges in all states (also ended ones)  

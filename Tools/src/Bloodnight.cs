@@ -36,7 +36,7 @@ namespace MinksMods.Tools
                 if (ci != null)
                 {
                     //todo: implement
-                    // HOT TO GET THE FUCKING GAME TIME ?!?
+                    // HOW TO GET THE FUCKING GAME TIME ?!?
                     if (SdtdConsole.Instance != null)
                     {
                         SdtdConsole.Instance.Output("Not implemented yet.");

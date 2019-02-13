@@ -1,0 +1,13 @@
+﻿<?xml version='1.0'?>
+<MinksModChallenge>
+
+  <!-- in Minutes (default 15) -->
+  <RequestDuration> 15 </RequestDuration>
+
+  <!-- in Minutes (default 45) -->
+  <ChallengeDuration> 45 </ChallengeDuration>
+
+  <!-- in Seconds (default 10) -->
+  <InfoInterval> 10 </InfoInterval>
+
+</MinksModChallenge>

@@ -185,9 +185,9 @@ namespace MinksMods.ModChallenge
                             c.Handler.rec_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]You accepted a challenge vs "+ c.Handler.req_ci.playerName + "![-]", "", false, null));
                             c.Handler.req_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + c.Handler.rec_ci.playerName + " accepted your challenge![-]", "", false, null));
                             c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.accepted);
-#if !DEBUG
+
                             c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.accepted);
-#endif
+
                             return;
 
                         }
@@ -210,9 +210,9 @@ namespace MinksMods.ModChallenge
                             }
 
                             c.Handler.SendSoundPackage(c.Handler.rec_ci, ModChallenge.SoundEvents.revoked);
-#if !DEBUG
+
                             c.Handler.SendSoundPackage(c.Handler.req_ci, ModChallenge.SoundEvents.revoked);
-#endif
+
                             ModChallenge.DelChallenge(c);
                             return;
                         }

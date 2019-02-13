@@ -17,15 +17,11 @@
     Feature Ideas:
     * (global) Scorboard
     * use markers
-    * commands also work from chatwindow
     * save challanges in history class
-    * giveup/cancel command
     * time left ticker
     * 
     Known Issues:
-    * Start fresh server with this mod: 1. start will crash (directory does not exist)
-    * add multiple invites
-    * check if player kills player (other event)
+    * Start fresh server with this mod will not write an xml config file.
 */
 #define RELEASE
 
@@ -56,10 +52,6 @@ namespace MinksMods.ModChallenge
         public static int info_interval;                    // seconds (default 10)
         public static string message_color = "ff0000";      // rgb
         // ---
-
-#if DEBUG
-        public static string mySteamID = "76561197981703289";
-#endif
 
         public static void init()
         {
@@ -236,15 +228,6 @@ namespace MinksMods.ModChallenge
                 { SoundEvents.info      , "buttonclick" },
                 { SoundEvents.gunshot   , "44magnum_fire" }
             };
-
-#if DEBUG
-        public static void print_debug(string text)
-        {
-            ClientInfo mink = ConsoleHelper.ParseParamIdOrName(ModChallenge.mySteamID);
-            mink.SendPackage(new NetPackageChat(EChatType.Whisper, -1, text, "debug", false, null));
-        }
-#endif
-
     }
 
     [Serializable]
@@ -431,12 +414,13 @@ namespace MinksMods.ModChallenge
                         ShowDistances();
 
                         SendSoundPackage(rec_ci, ModChallenge.SoundEvents.start);
+                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
 #if DEBUG
                         timer.Change(5000, 0);
 #else
-                        timer.Change(60000, 0);
+                        timer.Change(30000, 0);
 #endif
-                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.start);
+                        
                     }
                     break;
 
@@ -453,12 +437,13 @@ namespace MinksMods.ModChallenge
                     {
                         ShowDistances();
                         SendSoundPackage(rec_ci, ModChallenge.SoundEvents.info);
+                        SendSoundPackage(req_ci, ModChallenge.SoundEvents.info);
 #if DEBUG
                         timer.Change(5000, 0);
 #else
                         timer.Change((int)new TimeSpan(0, 0, ModChallenge.info_interval).TotalMilliseconds, 0);
 #endif
-                        SendSoundPackage(rec_ci, ModChallenge.SoundEvents.info);
+                        
                     }
                     break;
 
@@ -485,11 +470,8 @@ namespace MinksMods.ModChallenge
         public void ShowDistances()
         {
             //other way of getting distance: Entitiy.GetDistance
-//#if DEBUG
-//            float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), new UnityEngine.Vector3(0, 0));
-//#else
             float dist = UnityEngine.Vector3.Distance(rec_p.LastPosition.ToVector3(), req_p.LastPosition.ToVector3());
-//#endif
+
             string dir = GetDirection(req_p.LastPosition, rec_p.LastPosition);
             if (dir == "")
             {
@@ -593,13 +575,7 @@ namespace MinksMods.ModChallenge
         public string GetDirection(Vector3i thisone, Vector3i otherone)
         {
             string response = "";
-/*
-#if DEBUG
-            otherone.x = 0;
-            otherone.y = 0;
-            otherone.z = 0;
-#endif
-*/
+
             if (thisone.z < otherone.z)
             {
                 response = "north";

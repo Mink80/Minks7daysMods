@@ -560,8 +560,8 @@ namespace MinksMods.ModChallenge
                 if (p_ci == null || p_ci.playerId == challenge.Receiver || p_ci.playerId == challenge.Requester)
                     continue;
 
-                p_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + winner.playerName + " won a Challange against " + ((challenge.Winner == Challenge.winoptions.receiver) ? rec_ci.playerName : req_ci.playerName) + "![-]", "", false, null));
-                SendSoundPackage(p_ci, ModChallenge.SoundEvents.gunshot);
+                p_ci.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + winner.playerName + " won a Challange against " + ((challenge.Winner == Challenge.winoptions.receiver) ? req_ci.playerName : rec_ci.playerName) + "![-]", "", false, null));
+                //SendSoundPackage(p_ci, ModChallenge.SoundEvents.gunshot);
             }
         }
 

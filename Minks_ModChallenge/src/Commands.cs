@@ -18,8 +18,6 @@ namespace MinksMods.ModChallenge
             return "Challenge \n" +
                    "Usage:\n" +
                    "  Challenge [ <player_name> | giveu p]  [ accept | cancel ] \n\n" +
-                   "Alias: \n" +
-                   " C  [ <player_name> | giveup ]  [ accept | cancel ] \n\n" +
                    "Simple Examples:\n" +
                    "  You use:  \"Challenge Joe\" \n" +
                    "  Joe uses: \"Challenge YourName accept\" \n\n" +
@@ -33,7 +31,7 @@ namespace MinksMods.ModChallenge
 
         public override string[] GetCommands()
         {
-            return new[] { "Challenge", "c" };
+            return new[] { "Challenge", "" };
         }
 
         public override int DefaultPermissionLevel

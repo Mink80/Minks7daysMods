@@ -49,7 +49,7 @@ If the settings parameter been used, the command prints out the current settings
 
 
 ## Chat commands (t)
-Like the console commands, "/Challenge" and "/c" can be used in the chat window.
+Like the console commands, "/Challenge" can be used in the chat window.
 The parameters are the same.
 
 

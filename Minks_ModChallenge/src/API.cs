@@ -105,7 +105,7 @@ namespace MinksMods.ModChallenge
                     return false;
                 }
 
-                else if (_msg.StartsWith("/Challenge"))
+                else if (_msg.StartsWith("/Challenge") || (_msg.StartsWith("/challenge")))
                 {
                     new ChatCommand(_msg, _cInfo);
                     return false;

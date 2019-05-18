@@ -37,7 +37,6 @@ You can get them [here](https://7dtd.illy.bz/wiki/Server%20fixes "https://7dtd.i
     To giveup a challenge: "Challenge giveup" (can only be done in a running challange)
     If you want to challenge a user with a space in its name, use "Some Name".
 
-    "C" is the short version of "Challenges" and can be used with the same parameters.
     "withdraw", "deny", "revoke" are aliases for "cancel".
 
 ### For admins
@@ -50,7 +49,7 @@ If the settings parameter been used, the command prints out the current settings
 
 
 ## Chat commands (t)
-Like the console commands, "/Challenge" and "/c" can be used in the chat window.
+Like the console commands, "/Challenge" can be used in the chat window.
 The parameters are the same.
 
 
@@ -62,7 +61,7 @@ Of course you can also compile your own binary from the source. VS project file 
 
 ## Configuration
 The configuration file is named "Minks_ModChallenge.xml". For an example see [here](https://github.com/Mink80/Minks7daysMods/blob/master/Minks_ModChallenge/Minks_ModChallenge.xml "Minks_ModChallenge/Minks_ModChallenge.xml").
-The Mod will look for it in the save game directory of your game. If it will not find one, it creates the file while the first server start with the mod. The default values shown in the example will be used for that.
+The Mod will look for it in the UserGameDataDir (%appdata%\7DaysToDie) directory of your game. If it will not find one, it creates the file while the first server start with the mod. The default values shown in the example will be used for that.
 
 
 ## Licence

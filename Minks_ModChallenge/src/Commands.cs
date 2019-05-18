@@ -606,14 +606,16 @@ namespace MinksMods.ModChallenge
             try
             {
                 CommandSenderInfo senderinfo = _senderInfo;
-                string playerID = senderinfo.RemoteClientInfo.playerId;
-                Player p = PersistentContainer.Instance.Players[playerID, false];
+
+                if (SdtdConsole.Instance == null)
+                    return;
 
                 if (_params.Count > 0 && _params[0] == "settings")
                 {
 #if DEBUG
                     SdtdConsole.Instance.Output("Debug Mode enabled.");
 #else
+                    
                     SdtdConsole.Instance.Output("Release Mode");
 #endif
                     SdtdConsole.Instance.Output("RequestDuration: " + ModChallenge.request_duration.ToString() + " minutes");

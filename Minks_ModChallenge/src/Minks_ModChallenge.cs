@@ -19,9 +19,8 @@
     * use markers
     * save challanges in history class
     * time left ticker
+    * mod activation/deactivaten command
     * 
-    Known Issues:
-    * Start fresh server with this mod will not write an xml config file.
 */
 #define RELEASE
 
@@ -50,14 +49,15 @@ namespace MinksMods.ModChallenge
         public static int request_duration;                 // minutes (default 15)
         public static int challenge_duration;               // minutes (default 45)
         public static int info_interval;                    // seconds (default 10)
-        public static string message_color = "ff0000";      // rgb
+        public static string message_color = "ffff00";      // rgb
         // ---
 
         public static void init()
         {
-            filepath = GameUtils.GetSaveGameDir() + Path.DirectorySeparatorChar;
-            LoadSettingsFromXml();
             Log.Begin();
+            Log.Out("ModShallenge activated.");
+            filepath = GameUtils.GetUserGameDataDir() + Path.DirectorySeparatorChar;
+            LoadSettingsFromXml();
 #if DEBUG
             Log.Out("Warning! ModChallange loaded in Debug Mode!");
 #endif
@@ -84,7 +84,7 @@ namespace MinksMods.ModChallenge
                     Int32.TryParse(setting_info_inverval.InnerText, out info_interval)
                     )
                 {
-                    Log.Out("ModChallenge: Minks_ModChallenge.xml loaded.");
+                    Log.Out("ModChallenge: " + configfile + " loaded.");
                     return;
                 }
             }

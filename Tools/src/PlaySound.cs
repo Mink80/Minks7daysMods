@@ -65,7 +65,7 @@ namespace MinksMods.Tools
                     return;
                 }
 
-                _senderInfo.RemoteClientInfo.SendPackage(new NetPackageSoundAtPosition( player.LastPosition.ToVector3(), _params[0], UnityEngine.AudioRolloffMode.Linear, 10, ci.entityId));
+                _senderInfo.RemoteClientInfo.SendPackage(new NetPackageSoundAtPosition( player.LastPosition.ToVector3(), _params[0], UnityEngine.AudioRolloffMode.Linear, 1, ci.entityId));
             }
             catch (Exception Ex)
             {

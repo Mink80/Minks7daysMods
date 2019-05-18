@@ -15,16 +15,14 @@ namespace MinksMods.ModChallenge
 
         public override string GetHelp()
         {
-            return "Challenge \n" +
-                   "Usage:\n" +
-                   "  Challenge [ <player_name> | giveu p]  [ accept | cancel ] \n\n" +
+            return "Challenge usage: \n" +
+                   "  Challenge [ <player_name> | giveup ]  [ accept | cancel ] \n\n" +
                    "Simple Examples:\n" +
                    "  You use:  \"Challenge Joe\" \n" +
                    "  Joe uses: \"Challenge YourName accept\" \n\n" +
                    "  Challenge without any parameters shows your current challenge invites. \n" +
-                   "  To withdraw a challenge invite: \"Challenge JoeFarmer cancel\" (can only be done before challenge started) \n" +
-                   "  To deny a challenge request: \"Challenge RequesterName cancel\" \n" +
-                   "  To giveup a challenge: \"Challenge giveup\" (can only be done in a running challange) \n\n" +
+                   "  To withdraw or deny a challenge invite: \"Challenge JoeFarmer cancel\""  +
+                   "  To giveup a challenge: \"Challenge giveup\" \n" +
                    "If you want to challenge a user with a space in its name, use \"Some Name\".\n" +
                    "An unanswerd challenge invite will time out in " + ModChallenge.request_duration.ToString() + " minutes.\n";
         }
@@ -103,7 +101,7 @@ namespace MinksMods.ModChallenge
                     // no parameter - show requested/running challenges
                     case 0:
 
-                        ShowChallengesOnConsole(playerID);
+                        ShowChallenges(senderinfo.RemoteClientInfo, true);
                         break;
 
                     // 1 parameter - [ <PlayerNameToInvite> | "giveup" ]
@@ -436,7 +434,7 @@ namespace MinksMods.ModChallenge
         }
 
 
-        public void ShowChallengesOnConsole(string playerID)
+        public void ShowChallenges(ClientInfo Issuer, bool console)
         {
             bool found_one = false;
 
@@ -450,24 +448,64 @@ namespace MinksMods.ModChallenge
 
                 if (c.Stage == Challenge.stages.requested)
                 {
-                    SdtdConsole.Instance.Output("Open challenge request: " + c.Handler.req_ci.playerName + " challenged " + c.Handler.rec_ci.playerName + " at " + c.Time.ToString() + ".");
+                    if (console)
+                    {
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("Open challenge request: " + c.Handler.req_ci.playerName + " challenged " + c.Handler.rec_ci.playerName + " at " + c.Time.ToString() + ".");
+                        }
+                    }
+                    else
+                    {
+                        Issuer.SendPackage((new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: Open challenge request: " + c.Handler.req_ci.playerName + " challenged " + c.Handler.rec_ci.playerName + " at " + c.Time.ToString() + ".[-]", "", false, null)));
+                    }
                     found_one = true;
                 }
                 else if (c.Stage == Challenge.stages.running)
                 {
-                    SdtdConsole.Instance.Output("Running challenge: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ". Started at " + c.Time.ToString() + ".");
+                    if (console)
+                    {
+                        if (SdtdConsole.Instance != null)
+                        {
+                            SdtdConsole.Instance.Output("Running challenge: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ". Started at " + c.Time.ToString() + ".");
+                        }
+                    }
+                    else
+                    {
+                        Issuer.SendPackage((new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: Running challenge: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ". Started at " + c.Time.ToString() + ".[-]", "", false, null)));
+                    }
                     found_one = true;
                 }
                 else if (c.Stage == Challenge.stages.accepted)
                 {
                     found_one = true;
-                    if (c.Receiver == playerID || c.Requester == playerID)
+                    if (c.Receiver == Issuer.playerId || c.Requester == Issuer.playerId)
                     {
-                        SdtdConsole.Instance.Output("Your challenge vs " + ((playerID == c.Receiver) ? c.Handler.req_ci.playerName : c.Handler.rec_ci.playerName) + " will start soon.");
+                        if (console)
+                        {
+                            if (SdtdConsole.Instance != null)
+                            {
+                                SdtdConsole.Instance.Output("Your challenge vs " + ((Issuer.playerId == c.Receiver) ? c.Handler.req_ci.playerName : c.Handler.rec_ci.playerName) + " will start soon.");
+                            }
+                        }
+                        else
+                        {
+                            Issuer.SendPackage((new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: Your challenge vs " + ((Issuer.playerId == c.Receiver) ? c.Handler.req_ci.playerName : c.Handler.rec_ci.playerName) + " will start soon.[-]", "", false, null)));
+                        }
                     }
                     else
                     {
-                        SdtdConsole.Instance.Output("Challenge will start soon: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName);
+                        if (console)
+                        {
+                            if (SdtdConsole.Instance != null)
+                            {
+                                SdtdConsole.Instance.Output("Challenge will start soon: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ".");
+                            }
+                        }
+                        else
+                        {
+                            Issuer.SendPackage((new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: Challenge will start soon: " + c.Handler.req_ci.playerName + " vs " + c.Handler.rec_ci.playerName + ".[-]", "", false, null)));
+                        }
                     }
 
                 }
@@ -475,7 +513,17 @@ namespace MinksMods.ModChallenge
 
             if (!found_one)
             {
-                SdtdConsole.Instance.Output("No challenges found.");
+                if (console)
+                {
+                    if (SdtdConsole.Instance != null)
+                    {
+                        SdtdConsole.Instance.Output("No challenges found.");
+                    }
+                }
+                else
+                {
+                    Issuer.SendPackage((new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: No Challenges found.[-]", "", false, null)));
+                }
             }
         }
     }
@@ -499,6 +547,7 @@ namespace MinksMods.ModChallenge
             // just 3 parameters allowed
             if (Command.Length > 3)
             {
+                Issuer.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]ModChallenge: Wrong number of arguments. See /challenge help.[-]", "", false, null));
                 return;
             }
 

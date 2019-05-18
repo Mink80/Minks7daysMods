@@ -99,9 +99,14 @@ namespace MinksMods.ModChallenge
 
             if (_cInfo != null)
             {
-                if ( _msg.EqualsCaseInsensitive("/challenge"))
+                if ( _msg.EqualsCaseInsensitive("/challenge") || _msg.EqualsCaseInsensitive("/challenges"))
                 {
-                    _cInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "Please open the console with F1 and use the command \"Challenge\" to get a list of Challenges or \"help challenge\" for help.", "", false, null));
+                    new ChallengeCmd().ShowChallenges(_cInfo, false);
+                    return false;
+                }
+                else if (_msg.EqualsCaseInsensitive("/challenge help"))
+                {
+                    _cInfo.SendPackage(new NetPackageChat(EChatType.Whisper, -1, "[" + ModChallenge.message_color + "]" + new ChallengeCmd().GetHelp() + "[-]", "", false, null));
                     return false;
                 }
 

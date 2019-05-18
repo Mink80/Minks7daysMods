@@ -462,8 +462,7 @@ namespace MinksMods.ModChallenge
                 return;
             }
 
-            //todo: check sound options (range etc)
-            _ci.SendPackage(new NetPackageSoundAtPosition(rec_p.LastPosition.ToVector3(), ModChallenge.Sounds[_se] , UnityEngine.AudioRolloffMode.Linear, 10, rec_ci.entityId));
+            _ci.SendPackage(new NetPackageSoundAtPosition(rec_p.LastPosition.ToVector3(), ModChallenge.Sounds[_se] , UnityEngine.AudioRolloffMode.Linear, 1, rec_ci.entityId));
         }
 
 

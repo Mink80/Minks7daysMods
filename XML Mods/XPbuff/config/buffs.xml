@@ -1,0 +1,15 @@
+<MinkiosMods>
+    <append xpath="/buffs">
+
+        <buff name="BuffVotingReward" icon="ui_game_symbol_perk" icon_color="255,255,0" remove_on_death="false">
+            <stack_type value="ignore"/>
+            <duration value="3600"/>
+            <effect_group>
+                <passive_effect name="PlayerExpGain" operation="perc_add" value=".5" />
+            </effect_group>
+        </buff>
+
+    </append>
+</MinkiosMods>
+
+

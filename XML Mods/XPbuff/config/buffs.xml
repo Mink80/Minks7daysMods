@@ -1,7 +1,7 @@
 <MinkiosMods>
     <append xpath="/buffs">
 
-        <buff name="BuffVotingReward" icon="ui_game_symbol_perk" icon_color="255,255,0" remove_on_death="false">
+        <buff name="VotingBuff" icon="ui_game_symbol_perk" description_key="XP buff for voting: +50%" tooltip_key="Power hour active: +50% XP bonus!" icon_color="255,255,0" remove_on_death="false">
             <stack_type value="ignore"/>
             <duration value="3600"/>
             <effect_group>
